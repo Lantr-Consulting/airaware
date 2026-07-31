@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# env & platform
+.env
+.env*.local
+.vercel/
+
+# python backend
+backend/.venv/
+backend/__pycache__/
+__pycache__/
+*.pyc
+
+# misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
