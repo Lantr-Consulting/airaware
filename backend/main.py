@@ -91,6 +91,7 @@ class SettingsRequest(BaseModel):
     homeLocation: dict | None = None
     units: str | None = None
     paused: bool | None = None
+    activated: bool | None = None
 
 
 @app.patch("/me/settings")
@@ -107,6 +108,8 @@ def me_settings(req: SettingsRequest, user: dict = Depends(auth.current_user)):
         fields["units"] = req.units
     if req.paused is not None:
         fields["paused"] = bool(req.paused)
+    if req.activated is not None:
+        fields["activated"] = bool(req.activated)
     if not fields:
         raise HTTPException(status_code=400, detail="nothing to update")
     return db.advisor_out(db.update_advisor(user["id"], fields))
@@ -198,6 +201,8 @@ def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user))
     if llm is None:
         raise HTTPException(status_code=503, detail="LLM not configured")
     advisor, activities = _advisor_ctx(user)
+    if not advisor["activated"]:
+        raise HTTPException(status_code=409, detail="activate your advisor first — review your profile and limits, then Activate")
     if advisor["paused"]:
         raise HTTPException(status_code=409, detail="advisor is paused")
     today = store.today_local(advisor["homeLocation"]["tz"])
@@ -206,8 +211,9 @@ def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user))
         raise HTTPException(status_code=400, detail="plans are today-only until async runs arrive")
     import agent  # heavy import; loaded on first use
 
+    lessons = db.recent_decline_lessons(user["id"])
     try:
-        plan = agent.run_plan(date_iso, advisor, activities)
+        plan = agent.run_plan(date_iso, advisor, activities, lessons)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"planner failed: {e}")
     return db.put_plan(user["id"], plan)

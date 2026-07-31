@@ -169,7 +169,7 @@ def _extract_json(text: str) -> dict:
     raise ValueError("unbalanced JSON in agent output")
 
 
-def run_plan(date_iso: str, advisor: dict, activities: list[dict]) -> dict:
+def run_plan(date_iso: str, advisor: dict, activities: list[dict], lessons: list[dict] | None = None) -> dict:
     """Generate, engine-check, and return the day plan record for one user."""
     home = advisor["homeLocation"]
     hourly = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))["hourly"]
@@ -181,9 +181,16 @@ def run_plan(date_iso: str, advisor: dict, activities: list[dict]) -> dict:
         profile=advisor["profile"],
     )
 
-    result = _build_executor().invoke(
-        {"input": f"Build the day plan for {date_iso}. The user's home is {home['name']}."}
-    )
+    prompt = f"Build the day plan for {date_iso}. The user's home is {home['name']}."
+    if lessons:
+        # The feedback loop: past declines are standing instructions, not
+        # suggestions. Do not re-propose what the user already refused.
+        lines = "\n".join(f'- Declined "{l["title"]}" — their reason: "{l["reason"]}"' for l in lessons)
+        prompt += (
+            "\n\nSTANDING LESSONS from this user's past declines. Do not propose "
+            "equivalents of these; respect the reasons:\n" + lines
+        )
+    result = _build_executor().invoke({"input": prompt})
     raw = _extract_json(result["output"])
 
     thresholds = advisor["thresholds"]

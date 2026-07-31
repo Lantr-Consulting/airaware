@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { createActivity, deleteActivity, listActivities, updateActivity } from "@/lib/api";
 import { DOW_SHORT, fmtDays, fmtTime } from "@/lib/format";
 import { ACTIVITIES } from "@/lib/mock";
@@ -37,6 +38,7 @@ const EMPTY_FORM = {
 };
 
 export default function ActivitiesPage() {
+  const toast = useToast();
   const [signedOut, setSignedOut] = useState(false);
   const [offline, setOffline] = useState(false);
   const [items, setItems] = useState<Activity[]>(ACTIVITIES);
@@ -83,8 +85,10 @@ export default function ActivitiesPage() {
     setItems((xs) => xs.filter((x) => x.id !== a.id));
     try {
       await deleteActivity(a.id);
+      toast("info", `“${a.name}” removed from your week.`);
     } catch {
       setItems(prev);
+      toast("error", "Couldn't delete — restored it.");
     }
   }
 
@@ -100,6 +104,9 @@ export default function ActivitiesPage() {
       setItems((xs) => [...xs, created].sort((a, b) => a.startTime.localeCompare(b.startTime)));
       setForm(EMPTY_FORM);
       setAdding(false);
+      toast("success", `“${created.name}” added — the planner sees it on its days.`);
+    } catch {
+      toast("error", "Couldn't save the activity — try again.");
     } finally {
       setBusy(false);
     }

@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Card, ConditionTile } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { aqiBand, heatBand, pollenBand, uvBand } from "@/lib/bands";
-import { getConditions, searchCities } from "@/lib/api";
+import { getConditions, patchSettings, searchCities } from "@/lib/api";
 import { EXPLORE_CITIES } from "@/lib/mock";
+import { invalidateMe, useMe } from "@/lib/use-me";
 import type { DailySummary, Location } from "@/lib/types";
 
 const CELL_BG = ["bg-band-0", "bg-band-1", "bg-band-2", "bg-band-3", "bg-band-4"];
@@ -19,11 +21,23 @@ interface CityCard {
 const SAMPLE_CARDS: CityCard[] = EXPLORE_CITIES.map((c) => ({ ...c, live: false }));
 
 export default function ExplorePage() {
+  const toast = useToast();
+  const { me } = useMe();
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<CityCard[]>(SAMPLE_CARDS);
   const [offline, setOffline] = useState(false);
   const [searching, setSearching] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  async function setAsHome(loc: Location) {
+    try {
+      await patchSettings({ homeLocation: loc });
+      invalidateMe();
+      toast("success", `Home set to ${loc.name} — Today and the planner follow.`);
+    } catch {
+      toast("error", "Couldn't set home — try again.");
+    }
+  }
 
   // Upgrade the featured cities from sample to live on mount.
   useEffect(() => {
@@ -163,6 +177,17 @@ export default function ExplorePage() {
                   >
                     {c.live ? "Live" : "Sample"}
                   </span>
+                  {me && me.homeLocation.name !== c.location.name && (
+                    <button
+                      onClick={() => setAsHome(c.location)}
+                      className="btn-ghost px-2.5 py-0.5 text-[11px]"
+                    >
+                      Set as home
+                    </button>
+                  )}
+                  {me && me.homeLocation.name === c.location.name && (
+                    <span className="text-[11px] font-medium text-accent">Home</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="mr-1 text-[11px] text-ink-muted">Next 7 days</span>

@@ -13,15 +13,24 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 5 — Memory & accounts
+## Status: Milestone 6 — Make it feel real
 
-AirAware remembers. Magic-link sign-in (Supabase), one advisor per user
-with Row-Level Security ("two people, two worlds"), your own recurring
-activities (seeded with a starter week, editable in the app), and plans
-that survive restarts in Postgres instead of a JSON file. The same day can
-read differently for two people: thresholds are per-user, so a window
-that's "great" for one account is vetoed for a grass-allergic one. Signed
-out, every screen still works on sample data.
+AirAware now works like a product, anywhere on Earth. New accounts land on
+a **three-step welcome** and nothing plans until an explicit **Activate**.
+**Your city is yours:** search any city as your home (ZIP auto-fills for US
+pollen), or hit "Set as home" on any Explore card — Today, the Planner, and
+the advisor follow instantly. **Declines teach the planner:** your reasons
+become standing lessons injected into the next run ("keep it at lunch per
+your preference — wear sunscreen instead"). The Planner shows your real
+week against the real 7-day forecast; toasts, skeletons, and a live topbar
+keep every state visible. Signed out, every screen still runs on sample
+data.
+
+From Milestone 5: magic-link sign-in (Supabase), one advisor per user with
+Row-Level Security ("two people, two worlds"), per-user activities and
+plans in Postgres. The same day reads differently for two people:
+thresholds are user-owned, so a window that's "great" for one account is
+vetoed for a grass-allergic one.
 
 From Milestone 4: the planner is real. `backend/exposure.py` is the deterministic exposure
 engine — NWS Rothfusz heat index, WHO/EPA/Pollen.com bands,
@@ -53,8 +62,8 @@ sample data offline. Full design in [DESIGN.md](DESIGN.md).
 | 2. Design pass | Band-color token system, hourly timeline, visual polish ✅ |
 | 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data ✅ |
 | 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline ✅ |
-| 5. Memory & accounts | Supabase database, sign-in, one advisor per user ✅ *(this one)* |
-| 6. Make it feel real | Onboarding/Activate, decline-reason lessons, good windows, US pollen adapter |
+| 5. Memory & accounts | Supabase database, sign-in, one advisor per user ✅ |
+| 6. Make it feel real | Onboarding/Activate, any-city home, decline-reason lessons, product polish ✅ *(this one)* |
 | 7. Workspace | Async plan runs, threads, forecast-change supersession |
 | 8. Briefings | Scheduler with cross-worker claim, on-change triggers |
 | 9. Evals | Historical replay benchmark: missed risks, false alarms, measured improvement |

@@ -71,12 +71,16 @@ def geocode(query: str, count: int = 5) -> list[dict]:
         region = hit.get("admin1")
         country = hit.get("country")
         suffix = region if country in ("United States", None) else country
+        postcodes = hit.get("postcodes") or []
         out.append(
             {
                 "name": f"{label}, {suffix}" if suffix else label,
                 "lat": hit["latitude"],
                 "lon": hit["longitude"],
                 "tz": hit.get("timezone", "UTC"),
+                # US pollen needs a ZIP; pass one through when the geocoder
+                # has it so "set as home" keeps pollen coverage.
+                "zip": postcodes[0] if hit.get("country_code") == "US" and postcodes else None,
             }
         )
     return out

@@ -80,6 +80,9 @@ def ensure_advisor(user_id: str, email: str, defaults: dict, default_activities:
         "thresholds": defaults["thresholds"],
         "home_location": defaults["home"],
         "units": "imperial",
+        # New advisors start inactive: describe -> review -> explicit
+        # Activate. Nothing plans until the user blesses it.
+        "activated": False,
     }
     created = _rest("POST", "aa_advisors", json=row, extra_headers=_REPR)[0]
     for a in default_activities:
@@ -221,6 +224,24 @@ def put_plan(user_id: str, plan: dict) -> dict:
         })
     created = _rest("POST", "aa_plan_items", json=item_rows, extra_headers=_REPR) if item_rows else []
     return plan_out(plan_row, created)
+
+
+def recent_decline_lessons(user_id: str, limit: int = 8) -> list[dict]:
+    """The feedback loop: reasons from past declines become standing
+    instructions for the next plan."""
+    rows = _rest("GET", "aa_plan_items", params={
+        "user_id": f"eq.{user_id}",
+        "status": "eq.declined",
+        "feedback": "not.is.null",
+        "order": "created_at.desc",
+        "limit": limit,
+        "select": "title,feedback,created_at",
+    })
+    return [
+        {"title": r["title"], "reason": (r.get("feedback") or {}).get("reason", "")}
+        for r in rows
+        if (r.get("feedback") or {}).get("reason")
+    ]
 
 
 def get_item(user_id: str, item_id: str) -> dict | None:

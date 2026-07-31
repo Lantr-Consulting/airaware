@@ -112,6 +112,7 @@ export function patchSettings(fields: {
   homeLocation?: Location;
   units?: string;
   paused?: boolean;
+  activated?: boolean;
 }): Promise<Omit<Me, "email">> {
   return req("/me/settings", { method: "PATCH", body: JSON.stringify(fields) });
 }
