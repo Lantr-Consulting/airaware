@@ -11,11 +11,14 @@ the forecast changes.
 
 A Lantr sample project, built in the same order a student builds theirs.
 
-## Status: Milestone 0 — Designed, not yet built
+**Live:** https://airaware-omega.vercel.app
 
-The full design — product, control model, data sources, data model, and the
-milestone-by-milestone build plan — is in [DESIGN.md](DESIGN.md). Seven
-screens are planned:
+## Status: Milestone 1 — First Ship
+
+All seven screens live on Vercel against typed mock data shaped like the
+real records (`lib/types.ts`, `lib/mock.ts`) — one coherent Austin week,
+hand-checked against the official band scales in `lib/bands.ts`. The full
+design and build plan is in [DESIGN.md](DESIGN.md).
 
 - **Today** — day score, condition tiles in official band colors, hourly timeline, proposal cards
 - **Planner** — the week: activities × forecast bands, re-plan badges
@@ -29,8 +32,8 @@ screens are planned:
 
 | Milestone | What ships |
 |---|---|
-| 0. Design | This document set: scope, control model, data sources, plan ✅ *(this one)* |
-| 1. First Ship | Frontend on Vercel, all seven screens on typed mock data |
+| 0. Design | This document set: scope, control model, data sources, plan ✅ |
+| 1. First Ship | Frontend on Vercel, all seven screens on typed mock data ✅ *(this one)* |
 | 2. Design pass | Band-color token system, hourly timeline, visual polish |
 | 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data |
 | 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline |
@@ -49,4 +52,9 @@ key) · Supabase (Postgres + auth). All free tier, no credit card.
 
 ## Run it
 
-Nothing to run yet — Milestone 1 ships the frontend.
+```bash
+npm install
+npm run dev
+```
+
+Then open http://localhost:3000.
