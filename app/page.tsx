@@ -12,9 +12,11 @@ import {
   declineItem,
   generatePlan,
   getConditions,
+  getRun,
   getTodayPlan,
   listActivities,
   patchSettings,
+  steerRun,
   type LiveConditions,
 } from "@/lib/api";
 import { fmtWeekday } from "@/lib/format";
@@ -92,7 +94,9 @@ export default function TodayPage() {
   const [plan, setPlan] = useState<DayPlan | null>(null);
   const [myActivities, setMyActivities] = useState<Activity[] | null>(null);
   const [offline, setOffline] = useState(false);
-  const [planning, setPlanning] = useState(false);
+  const [run, setRun] = useState<{ id: string; started: number } | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [steerDraft, setSteerDraft] = useState("");
 
   const signedOut = !meLoading && me === null;
 
@@ -118,15 +122,51 @@ export default function TodayPage() {
   }, [me]);
 
   async function planMyDay() {
-    if (planning) return;
-    setPlanning(true);
+    if (run) return;
     try {
-      setPlan(await generatePlan());
-      toast("success", "Your day is planned — every item measured by the engine.");
+      const { runId } = await generatePlan();
+      setRun({ id: runId, started: Date.now() });
+    } catch (e) {
+      toast(
+        "error",
+        e instanceof Error && e.message.includes("in flight")
+          ? "A plan run is already in flight — steer it or wait."
+          : "Couldn't start the planner — try again in a moment."
+      );
+    }
+  }
+
+  // Poll the run in the DB until it lands; either backend worker can answer.
+  useEffect(() => {
+    if (!run) return;
+    const t = setInterval(async () => {
+      setElapsed(Math.round((Date.now() - run.started) / 1000));
+      try {
+        const status = await getRun(run.id);
+        if (status.status === "done") {
+          setRun(null);
+          setElapsed(0);
+          setPlan(await getTodayPlan());
+          toast("success", "Your day is planned — every item measured by the engine.");
+        } else if (status.status === "error") {
+          setRun(null);
+          setElapsed(0);
+          toast("error", "The planner hit an error — try again in a moment.");
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(t);
+  }, [run, toast]);
+
+  async function sendSteer() {
+    const note = steerDraft.trim();
+    if (!note || !run) return;
+    try {
+      await steerRun(run.id, note);
+      setSteerDraft("");
+      toast("info", "Noted — the planner reads steering on its next run.");
     } catch {
-      toast("error", "The planner couldn't finish — try again in a moment.");
-    } finally {
-      setPlanning(false);
+      toast("error", "Couldn't save the note.");
     }
   }
 
@@ -207,33 +247,64 @@ export default function TodayPage() {
                 {activePlan.dayScore}
               </span>
               <span className="text-sm text-ink-muted">day score / 100</span>
-              {live && (
-                <button
-                  onClick={planMyDay}
-                  disabled={planning}
-                  className="btn-ghost px-3.5 py-1.5 text-xs"
-                >
-                  {planning ? "Re-planning…" : "Re-plan"}
+              {live && !run && (
+                <button onClick={planMyDay} className="btn-ghost px-3.5 py-1.5 text-xs">
+                  Re-plan
                 </button>
               )}
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">
               {activePlan.summary}
             </p>
+            {activePlan.supersededNote && (
+              <p className="mt-2 text-xs text-ink-muted">{activePlan.supersededNote}</p>
+            )}
           </>
         ) : (
-          !needsSetup && (
+          !needsSetup &&
+          !run && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <button onClick={planMyDay} disabled={planning} className="btn-primary px-5 py-2.5 text-sm">
-                {planning ? "Planning your day…" : "Plan my day"}
+              <button onClick={planMyDay} className="btn-primary px-5 py-2.5 text-sm">
+                Plan my day
               </button>
               <span className="text-xs text-ink-muted">
-                {planning
-                  ? "The planner is scoring windows with the exposure engine — usually under a minute."
-                  : "The agent reads your schedule and the live forecast, and proposes only what the engine clears."}
+                The agent reads your schedule and the live forecast, and proposes only what the engine clears.
               </span>
             </div>
           )
+        )}
+
+        {run && (
+          <div className="mt-4 max-w-2xl rounded-2xl bg-surface p-4">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-medium">Planning your day…</span>
+              <span className="text-xs text-ink-muted" style={{ fontVariantNumeric: "tabular-nums" }}>
+                {elapsed}s
+              </span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+              <div
+                className="h-full rounded-full bg-accent transition-[width] duration-1000"
+                style={{ width: `${Math.min(95, (elapsed / 75) * 100)}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-ink-muted">
+              The agent is scoring windows with the exposure engine. Leave it a
+              note — steering lands on the next run.
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                value={steerDraft}
+                onChange={(e) => setSteerDraft(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendSteer()}
+                placeholder="e.g. Nothing before 7 am this week"
+                className="flex-1 rounded-full border border-hairline bg-page px-3.5 py-1.5 text-sm placeholder:text-ink-muted"
+              />
+              <button onClick={sendSteer} className="btn-ghost px-3.5 py-1.5 text-xs">
+                Steer
+              </button>
+            </div>
+          </div>
         )}
       </header>
 

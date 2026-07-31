@@ -169,7 +169,13 @@ def _extract_json(text: str) -> dict:
     raise ValueError("unbalanced JSON in agent output")
 
 
-def run_plan(date_iso: str, advisor: dict, activities: list[dict], lessons: list[dict] | None = None) -> dict:
+def run_plan(
+    date_iso: str,
+    advisor: dict,
+    activities: list[dict],
+    lessons: list[dict] | None = None,
+    steer: list[str] | None = None,
+) -> dict:
     """Generate, engine-check, and return the day plan record for one user."""
     home = advisor["homeLocation"]
     hourly = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))["hourly"]
@@ -190,6 +196,8 @@ def run_plan(date_iso: str, advisor: dict, activities: list[dict], lessons: list
             "\n\nSTANDING LESSONS from this user's past declines. Do not propose "
             "equivalents of these; respect the reasons:\n" + lines
         )
+    if steer:
+        prompt += "\n\nSTEERING NOTES the user left for this run:\n" + "\n".join(f"- {s}" for s in steer)
     result = _build_executor().invoke({"input": prompt})
     raw = _extract_json(result["output"])
 
@@ -228,4 +236,6 @@ def run_plan(date_iso: str, advisor: dict, activities: list[dict], lessons: list
         "dayScore": exposure.day_score(hourly, schedule, thresholds, profile),
         "summary": str(raw.get("summary", ""))[:600],
         "items": items,
+        # Stored on the plan so a re-plan can say WHAT changed.
+        "conditionsSnapshot": hourly,
     }

@@ -13,10 +13,20 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 6 — Make it feel real
+## Status: Milestone 7 — Workspace
 
-AirAware now works like a product, anywhere on Earth. New accounts land on
-a **three-step welcome** and nothing plans until an explicit **Activate**.
+One coherent agent. Plan runs are **async**: the button returns instantly,
+a progress bar polls the run's row in the database (either backend worker
+can answer), and you can **steer mid-run** — notes land on the next cycle.
+A re-plan **supersedes** rather than overwrites, and the new plan says what
+changed, diffed from the old plan's conditions snapshot — never invented.
+Advisor conversations are **persistent threads** (server-side context: your
+rows, your plan, the live sky), and the per-user run lock lives in Postgres
+via compare-and-swap, because an in-memory lock dies with two workers.
+
+From Milestone 6: AirAware works like a product, anywhere on Earth. New
+accounts land on a **three-step welcome** and nothing plans until an
+explicit **Activate**.
 **Your city is yours:** search any city as your home (ZIP auto-fills for US
 pollen), or hit "Set as home" on any Explore card — Today, the Planner, and
 the advisor follow instantly. **Declines teach the planner:** your reasons
@@ -63,8 +73,8 @@ sample data offline. Full design in [DESIGN.md](DESIGN.md).
 | 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data ✅ |
 | 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline ✅ |
 | 5. Memory & accounts | Supabase database, sign-in, one advisor per user ✅ |
-| 6. Make it feel real | Onboarding/Activate, any-city home, decline-reason lessons, product polish ✅ *(this one)* |
-| 7. Workspace | Async plan runs, threads, forecast-change supersession |
+| 6. Make it feel real | Onboarding/Activate, any-city home, decline-reason lessons, product polish ✅ |
+| 7. Workspace | Async plan runs + steering, persistent threads, supersession, DB run lock ✅ *(this one)* |
 | 8. Briefings | Scheduler with cross-worker claim, on-change triggers |
 | 9. Evals | Historical replay benchmark: missed risks, false alarms, measured improvement |
 | 10. Polish + Blueprint | Product polish, BLUEPRINT.md demo package, BUILD_GUIDE.md |

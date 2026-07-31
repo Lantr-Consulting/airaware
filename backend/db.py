@@ -179,13 +179,15 @@ def plan_out(plan_row: dict, item_rows: list[dict]) -> dict:
         "status": plan_row["status"],
         "dayScore": plan_row["day_score"],
         "summary": plan_row["summary"],
+        "supersededNote": plan_row.get("superseded_note"),
         "items": [item_out(r) for r in item_rows],
     }
 
 
 def get_plan(user_id: str, date_iso: str) -> dict | None:
     plans = _rest("GET", "aa_day_plans",
-                  params={"user_id": f"eq.{user_id}", "date": f"eq.{date_iso}", "limit": 1})
+                  params={"user_id": f"eq.{user_id}", "date": f"eq.{date_iso}",
+                          "status": "eq.active", "limit": 1})
     if not plans:
         return None
     items = _rest("GET", "aa_plan_items",
@@ -193,10 +195,17 @@ def get_plan(user_id: str, date_iso: str) -> dict | None:
     return plan_out(plans[0], items)
 
 
+def supersede_plan(user_id: str, date_iso: str) -> dict | None:
+    """Mark the current active plan superseded; returns it (with its
+    conditions snapshot) so the new plan can diff against it."""
+    rows = _rest("PATCH", "aa_day_plans",
+                 params={"user_id": f"eq.{user_id}", "date": f"eq.{date_iso}", "status": "eq.active"},
+                 json={"status": "superseded"}, extra_headers=_REPR)
+    return rows[0] if rows else None
+
+
 def put_plan(user_id: str, plan: dict) -> dict:
-    """Replace the user's plan for that date (a re-plan supersedes)."""
-    _rest("DELETE", "aa_day_plans",
-          params={"user_id": f"eq.{user_id}", "date": f"eq.{plan['date']}"})
+    """Insert the new active plan (the old one was superseded first)."""
     plan_row = _rest("POST", "aa_day_plans", json={
         "user_id": user_id,
         "date": plan["date"],
@@ -204,6 +213,8 @@ def put_plan(user_id: str, plan: dict) -> dict:
         "status": plan["status"],
         "day_score": plan["dayScore"],
         "summary": plan["summary"],
+        "conditions_snapshot": plan.get("conditionsSnapshot"),
+        "superseded_note": plan.get("supersededNote"),
     }, extra_headers=_REPR)[0]
     item_rows = []
     for it in plan["items"]:
@@ -255,3 +266,115 @@ def update_item(user_id: str, item_id: str, fields: dict) -> dict | None:
                  params={"id": f"eq.{item_id}", "user_id": f"eq.{user_id}"},
                  json=fields, extra_headers=_REPR)
     return rows[0] if rows else None
+
+
+# ---------------------------------------------------------------------------
+# Plan runs + the DB run lock (CAS — survives multiple workers)
+# ---------------------------------------------------------------------------
+
+def acquire_run_lock(user_id: str, stale_minutes: int = 15) -> bool:
+    """Compare-and-swap on aa_advisors.run_lock_at: claim only if free or
+    stale. Exactly one of two workers wins."""
+    cutoff = datetime.now(timezone.utc).timestamp() - stale_minutes * 60
+    cutoff_iso = datetime.fromtimestamp(cutoff, tz=timezone.utc).isoformat()
+    rows = _rest("PATCH", "aa_advisors",
+                 params={
+                     "user_id": f"eq.{user_id}",
+                     "or": f"(run_lock_at.is.null,run_lock_at.lt.{cutoff_iso})",
+                 },
+                 json={"run_lock_at": datetime.now(timezone.utc).isoformat()},
+                 extra_headers=_REPR)
+    return bool(rows)
+
+
+def release_run_lock(user_id: str) -> None:
+    _rest("PATCH", "aa_advisors", params={"user_id": f"eq.{user_id}"},
+          json={"run_lock_at": None})
+
+
+def run_out(r: dict) -> dict:
+    return {
+        "id": r["id"],
+        "status": r["status"],
+        "dates": r["dates"],
+        "steer": r["steer"],
+        "report": r.get("report"),
+        "error": r.get("error"),
+        "startedAt": r["started_at"],
+        "finishedAt": r.get("finished_at"),
+    }
+
+
+def create_run(user_id: str, dates: list[str]) -> dict:
+    return _rest("POST", "aa_plan_runs",
+                 json={"user_id": user_id, "dates": dates},
+                 extra_headers=_REPR)[0]
+
+
+def update_run(run_id: str, fields: dict) -> None:
+    _rest("PATCH", "aa_plan_runs", params={"id": f"eq.{run_id}"}, json=fields)
+
+
+def get_run(user_id: str, run_id: str) -> dict | None:
+    rows = _rest("GET", "aa_plan_runs",
+                 params={"id": f"eq.{run_id}", "user_id": f"eq.{user_id}", "limit": 1})
+    return rows[0] if rows else None
+
+
+def latest_run_steer(user_id: str) -> list[str]:
+    """Steering notes from the most recent run — 'saved for the next cycle'."""
+    rows = _rest("GET", "aa_plan_runs",
+                 params={"user_id": f"eq.{user_id}", "order": "started_at.desc", "limit": 2})
+    notes: list[str] = []
+    for r in rows:
+        notes.extend(n for n in (r.get("steer") or []) if isinstance(n, str))
+    return notes[:5]
+
+
+def append_steer(user_id: str, run_id: str, note: str) -> dict | None:
+    run = get_run(user_id, run_id)
+    if run is None:
+        return None
+    steer = (run.get("steer") or []) + [note]
+    _rest("PATCH", "aa_plan_runs", params={"id": f"eq.{run_id}"}, json={"steer": steer})
+    run["steer"] = steer
+    return run
+
+
+# ---------------------------------------------------------------------------
+# Chat threads + messages
+# ---------------------------------------------------------------------------
+
+def list_threads(user_id: str) -> list[dict]:
+    rows = _rest("GET", "aa_threads",
+                 params={"user_id": f"eq.{user_id}", "order": "updated_at.desc", "limit": 20})
+    return [{"id": r["id"], "title": r["title"], "updatedAt": r["updated_at"]} for r in rows]
+
+
+def create_thread(user_id: str, title: str) -> dict:
+    row = _rest("POST", "aa_threads",
+                json={"user_id": user_id, "title": title[:60]},
+                extra_headers=_REPR)[0]
+    return {"id": row["id"], "title": row["title"], "updatedAt": row["updated_at"]}
+
+
+def touch_thread(user_id: str, thread_id: str) -> None:
+    _rest("PATCH", "aa_threads",
+          params={"id": f"eq.{thread_id}", "user_id": f"eq.{user_id}"},
+          json={"updated_at": datetime.now(timezone.utc).isoformat()})
+
+
+def list_messages(user_id: str, thread_id: str) -> list[dict]:
+    rows = _rest("GET", "aa_messages",
+                 params={"thread_id": f"eq.{thread_id}", "user_id": f"eq.{user_id}",
+                         "order": "created_at", "limit": 100})
+    return [
+        {"id": r["id"], "threadId": r["thread_id"], "role": r["role"],
+         "content": r["content"], "createdAt": r["created_at"]}
+        for r in rows
+    ]
+
+
+def add_message(user_id: str, thread_id: str, role: str, content: str) -> None:
+    _rest("POST", "aa_messages",
+          json={"thread_id": thread_id, "user_id": user_id, "role": role, "content": content})

@@ -67,6 +67,62 @@ create table if not exists aa_plan_items (
   created_at timestamptz not null default now()
 );
 
+-- Milestone 7: Workspace — async runs, chat persistence, supersession.
+
+-- A re-plan supersedes rather than deletes: only one ACTIVE plan per day.
+alter table aa_day_plans drop constraint if exists aa_day_plans_user_id_date_key;
+create unique index if not exists aa_day_plans_active_unique
+  on aa_day_plans (user_id, date) where (status = 'active');
+alter table aa_day_plans add column if not exists conditions_snapshot jsonb;
+alter table aa_day_plans add column if not exists superseded_note text;
+
+-- Per-user run lock lives in the DB: an in-memory lock dies with 2 workers.
+alter table aa_advisors add column if not exists run_lock_at timestamptz;
+
+create table if not exists aa_plan_runs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  status text not null default 'running',
+  dates text[] not null default '{}',
+  steer jsonb not null default '[]',
+  report text,
+  error text,
+  started_at timestamptz not null default now(),
+  finished_at timestamptz
+);
+
+create table if not exists aa_threads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null default 'New conversation',
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists aa_messages (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references aa_threads(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table aa_plan_runs enable row level security;
+alter table aa_threads enable row level security;
+alter table aa_messages enable row level security;
+
+drop policy if exists "read own runs" on aa_plan_runs;
+create policy "read own runs" on aa_plan_runs
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "read own threads" on aa_threads;
+create policy "read own threads" on aa_threads
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "read own messages" on aa_messages;
+create policy "read own messages" on aa_messages
+  for select using (auth.uid() = user_id);
+
 alter table aa_advisors enable row level security;
 alter table aa_activities enable row level security;
 alter table aa_day_plans enable row level security;

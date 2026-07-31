@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import json
 import os
+import threading
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel
@@ -196,6 +198,59 @@ def plan_today(user: dict = Depends(auth.current_user)):
     return plan
 
 
+def _supersede_note(old_plan: dict | None, new_hourly: list[dict] | None) -> str | None:
+    """Human sentence about WHY the re-plan differs — diffed from the old
+    plan's conditions snapshot, never invented."""
+    if old_plan is None:
+        return None
+    stamp = datetime.now(timezone.utc).strftime("%H:%M UTC")
+    old_hourly = old_plan.get("conditions_snapshot") or []
+    if not old_hourly or not new_hourly:
+        return f"Re-planned {stamp}."
+    deltas = []
+    for label, key, unit, floor in (
+        ("air quality", "usAqi", " AQI", 15),
+        ("feels-like", "apparentF", "°F", 4),
+        ("UV", "uvIndex", "", 2),
+    ):
+        old_max = max(h[key] for h in old_hourly)
+        new_max = max(h[key] for h in new_hourly)
+        if abs(new_max - old_max) >= floor:
+            direction = "worsened" if new_max > old_max else "improved"
+            deltas.append((abs(new_max - old_max) / max(floor, 1), f"{label} {direction} ({old_max}{unit} → {new_max}{unit})"))
+    if not deltas:
+        return f"Re-planned {stamp} — forecast largely unchanged."
+    deltas.sort(reverse=True)
+    return f"Re-planned {stamp} — {deltas[0][1]}."
+
+
+def _plan_job(user_id: str, run_id: str, date_iso: str, advisor: dict, activities: list[dict]) -> None:
+    """Runs on a background thread; state lives in the DB so either worker
+    can answer the frontend's polling."""
+    try:
+        lessons = db.recent_decline_lessons(user_id)
+        steer = db.latest_run_steer(user_id)
+        import agent
+
+        plan = agent.run_plan(date_iso, advisor, activities, lessons, steer)
+        old = db.supersede_plan(user_id, date_iso)
+        plan["supersededNote"] = _supersede_note(old, plan.get("conditionsSnapshot"))
+        db.put_plan(user_id, plan)
+        db.update_run(run_id, {
+            "status": "done",
+            "report": plan["summary"],
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception as e:
+        db.update_run(run_id, {
+            "status": "error",
+            "error": str(e)[:500],
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+        })
+    finally:
+        db.release_run_lock(user_id)
+
+
 @app.post("/plan/generate")
 def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user)):
     if llm is None:
@@ -208,15 +263,39 @@ def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user))
     today = store.today_local(advisor["homeLocation"]["tz"])
     date_iso = req.date or today
     if date_iso != today:
-        raise HTTPException(status_code=400, detail="plans are today-only until async runs arrive")
-    import agent  # heavy import; loaded on first use
+        raise HTTPException(status_code=400, detail="plans are today-only for now")
+    if not db.acquire_run_lock(user["id"]):
+        raise HTTPException(status_code=409, detail="a plan run is already in flight — steer it or wait")
+    run = db.create_run(user["id"], [date_iso])
+    threading.Thread(
+        target=_plan_job,
+        args=(user["id"], run["id"], date_iso, advisor, activities),
+        daemon=True,
+    ).start()
+    return {"runId": run["id"], "status": "running"}
 
-    lessons = db.recent_decline_lessons(user["id"])
-    try:
-        plan = agent.run_plan(date_iso, advisor, activities, lessons)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"planner failed: {e}")
-    return db.put_plan(user["id"], plan)
+
+@app.get("/plan-runs/{run_id}")
+def plan_run_status(run_id: str, user: dict = Depends(auth.current_user)):
+    run = db.get_run(user["id"], run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="run not found")
+    return db.run_out(run)
+
+
+class SteerRequest(BaseModel):
+    note: str
+
+
+@app.post("/plan-runs/{run_id}/steer")
+def plan_run_steer(run_id: str, req: SteerRequest, user: dict = Depends(auth.current_user)):
+    note = req.note.strip()[:300]
+    if not note:
+        raise HTTPException(status_code=400, detail="empty note")
+    run = db.append_steer(user["id"], run_id, note)
+    if run is None:
+        raise HTTPException(status_code=404, detail="run not found")
+    return db.run_out(run)
 
 
 @app.post("/plan-items/{item_id}/accept")
@@ -374,6 +453,28 @@ class ChatRequest(BaseModel):
     location: ChatLocation | None = None
     profile: dict | None = None
     thresholds: dict | None = None
+    threadId: str | None = None
+
+
+def optional_user(authorization: str = Header(default="")) -> dict | None:
+    """Chat works signed-out (client context, nothing saved) and signed-in
+    (server-side truth, persisted threads)."""
+    if not authorization.startswith("Bearer "):
+        return None
+    try:
+        return auth.current_user(authorization)
+    except HTTPException:
+        return None
+
+
+@app.get("/threads")
+def threads_list(user: dict = Depends(auth.current_user)):
+    return {"threads": db.list_threads(user["id"])}
+
+
+@app.get("/threads/{thread_id}/messages")
+def thread_messages(thread_id: str, user: dict = Depends(auth.current_user)):
+    return {"messages": db.list_messages(user["id"], thread_id)}
 
 
 CHAT_SYSTEM = """You are the AirAware advisor: practical, concise, numbers-first
@@ -393,11 +494,42 @@ Hard rules:
 
 
 @app.post("/chat")
-def chat(req: ChatRequest):
+def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="LLM not configured")
 
+    # Signed in: the server's records are the truth — location, profile,
+    # thresholds, and today's plan come from the user's own rows.
+    thread_id: str | None = None
+    if user is not None:
+        advisor = _me(user)
+        home = advisor["homeLocation"]
+        req.location = ChatLocation(name=home["name"], lat=home["lat"], lon=home["lon"], zip=home.get("zip"))
+        req.profile = advisor["profile"]
+        req.thresholds = advisor["thresholds"]
+        thread_id = req.threadId
+        if thread_id is None:
+            thread_id = db.create_thread(user["id"], req.message.strip()[:48] or "New conversation")["id"]
+            req.history = []
+        else:
+            req.history = [ChatMessage(**m) for m in (
+                {"role": m["role"], "content": m["content"]}
+                for m in db.list_messages(user["id"], thread_id)
+            )]
+        db.add_message(user["id"], thread_id, "user", req.message.strip()[:2000])
+
     context_parts = []
+    if user is not None:
+        plan = db.get_plan(user["id"], store.today_local(advisor["homeLocation"]["tz"]))
+        if plan:
+            context_parts.append("TODAYS_PLAN " + json.dumps({
+                "dayScore": plan["dayScore"],
+                "summary": plan["summary"],
+                "items": [
+                    {"kind": i["kind"], "title": i["title"], "status": i["status"], "window": i.get("window")}
+                    for i in plan["items"]
+                ],
+            }))
     if req.location is not None:
         try:
             cond = environment.fetch_conditions(
@@ -438,4 +570,8 @@ def chat(req: ChatRequest):
     messages.append({"role": "user", "content": req.message.strip()[:2000]})
 
     resp = llm.chat.completions.create(model=MODEL, messages=messages, temperature=0.6)
-    return {"reply": resp.choices[0].message.content}
+    reply = resp.choices[0].message.content
+    if user is not None and thread_id is not None:
+        db.add_message(user["id"], thread_id, "assistant", reply)
+        db.touch_thread(user["id"], thread_id)
+    return {"reply": reply, "threadId": thread_id}

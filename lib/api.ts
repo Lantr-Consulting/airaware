@@ -137,8 +137,40 @@ export function getTodayPlan(): Promise<DayPlan> {
   return req<DayPlan>("/plan/today");
 }
 
-export function generatePlan(): Promise<DayPlan> {
-  return req<DayPlan>("/plan/generate", { method: "POST", body: JSON.stringify({}) });
+export interface PlanRunStatus {
+  id: string;
+  status: "running" | "done" | "error";
+  report?: string;
+  error?: string;
+  steer: string[];
+}
+
+// Generation is async: this returns a run id immediately; poll getRun until
+// done, then re-fetch the plan. Steering notes land in the NEXT run.
+export function generatePlan(): Promise<{ runId: string; status: string }> {
+  return req("/plan/generate", { method: "POST", body: JSON.stringify({}) });
+}
+
+export function getRun(runId: string): Promise<PlanRunStatus> {
+  return req(`/plan-runs/${runId}`);
+}
+
+export function steerRun(runId: string, note: string): Promise<PlanRunStatus> {
+  return req(`/plan-runs/${runId}/steer`, { method: "POST", body: JSON.stringify({ note }) });
+}
+
+export function getThreads(): Promise<{ id: string; title: string; updatedAt: string }[]> {
+  return req<{ threads: { id: string; title: string; updatedAt: string }[] }>("/threads").then(
+    (r) => r.threads
+  );
+}
+
+export function getThreadMessages(
+  threadId: string
+): Promise<{ id: string; threadId: string; role: "user" | "assistant"; content: string; createdAt: string }[]> {
+  return req<{ messages: { id: string; threadId: string; role: "user" | "assistant"; content: string; createdAt: string }[] }>(
+    `/threads/${threadId}/messages`
+  ).then((r) => r.messages);
 }
 
 // Accept re-checks on the server against the LATEST forecast; a 409 means
@@ -170,13 +202,11 @@ export function declineItem(id: string, reason: string): Promise<PlanItem> {
 
 export function chat(args: {
   message: string;
-  history: { role: "user" | "assistant"; content: string }[];
+  history?: { role: "user" | "assistant"; content: string }[];
   location?: { name: string; lat: number; lon: number; zip?: string };
   profile?: AdvisorProfile;
   thresholds?: Thresholds;
-}): Promise<string> {
-  return req<{ reply: string }>("/chat", {
-    method: "POST",
-    body: JSON.stringify(args),
-  }).then((r) => r.reply);
+  threadId?: string | null;
+}): Promise<{ reply: string; threadId: string | null }> {
+  return req("/chat", { method: "POST", body: JSON.stringify(args) });
 }

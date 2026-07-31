@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui";
-import { chat, getTodayPlan } from "@/lib/api";
+import { chat, getThreadMessages, getThreads, getTodayPlan } from "@/lib/api";
 import { dayScoreTone } from "@/lib/bands";
 import { ADVISOR, HOME, MESSAGES, PLAN_RUNS, THREADS } from "@/lib/mock";
 import { useMe } from "@/lib/use-me";
-import type { DayPlan, Message } from "@/lib/types";
+import type { DayPlan, Message, Thread } from "@/lib/types";
 
-// Minimal bold + bullet rendering for messages; full markdown arrives with
-// threaded chat persistence.
+// Minimal bold + bullet rendering for messages.
 function Rich({ text }: { text: string }) {
   return (
     <>
@@ -54,7 +53,12 @@ function Bubble({ msg }: { msg: Message }) {
 
 export default function AdvisorPage() {
   const { me, loading: meLoading } = useMe();
-  const [threadId, setThreadId] = useState(THREADS[0].id);
+  // Sample mode (signed out)
+  const [mockThreadId, setMockThreadId] = useState(THREADS[0].id);
+  // Live mode: persistent threads from the backend
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null); // null = new conversation
+  const [dbMsgs, setDbMsgs] = useState<Message[]>([]);
   const [extra, setExtra] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -67,63 +71,104 @@ export default function AdvisorPage() {
   useEffect(() => {
     if (!me) return;
     let cancelled = false;
-    getTodayPlan()
-      .then((p) => !cancelled && setLivePlan(p))
-      .catch(() => {});
+    getThreads().then((t) => !cancelled && setThreads(t)).catch(() => {});
+    getTodayPlan().then((p) => !cancelled && setLivePlan(p)).catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [me]);
 
-  const greeting: Message[] = live
-    ? [
-        {
-          id: "greet",
-          threadId: "live",
-          role: "assistant",
-          content: `Hi! I can see the live sky over **${me.homeLocation.name}** and your own limits. Ask about timing, gear, air quality — or whether tonight beats tomorrow morning.`,
-          createdAt: "",
-        },
-      ]
-    : [];
+  useEffect(() => {
+    if (!me || activeId === null) return;
+    let cancelled = false;
+    getThreadMessages(activeId)
+      .then((ms) => {
+        if (cancelled) return;
+        setDbMsgs(ms as Message[]);
+        setExtra([]); // the DB now holds what we sent optimistically
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [me, activeId]);
+
+  const greeting: Message[] =
+    live && activeId === null
+      ? [
+          {
+            id: "greet",
+            threadId: "new",
+            role: "assistant",
+            content: `Hi! I can see the live sky over **${me.homeLocation.name}**, your limits, and today's plan. Ask about timing, gear, or air quality.`,
+            createdAt: "",
+          },
+        ]
+      : [];
 
   const messages = live
-    ? [...greeting, ...extra]
+    ? [...greeting, ...(activeId === null ? [] : dbMsgs), ...extra]
     : [
-        ...MESSAGES.filter((m) => m.threadId === threadId),
-        ...extra.filter((m) => m.threadId === threadId),
+        ...MESSAGES.filter((m) => m.threadId === mockThreadId),
+        ...extra.filter((m) => m.threadId === mockThreadId),
       ];
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, thinking]);
 
+  function openThread(id: string | null) {
+    setActiveId(id);
+    setExtra([]);
+    if (id === null) setDbMsgs([]);
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || thinking) return;
-    const tid = live ? "live" : threadId;
+    const tid = live ? (activeId ?? "new") : mockThreadId;
     const mine: Message = { id: `x${extra.length}-u`, threadId: tid, role: "user", content: text, createdAt: "" };
     setExtra((xs) => [...xs, mine]);
     setDraft("");
     setThinking(true);
-    let reply: string;
     try {
-      const home = me?.homeLocation ?? HOME;
-      reply = await chat({
-        message: text,
-        history: [...messages, mine].map((m) => ({ role: m.role, content: m.content })),
-        location: { name: home.name, lat: home.lat, lon: home.lon, zip: home.zip },
-        profile: me?.profile ?? ADVISOR.profile,
-        thresholds: me?.thresholds ?? ADVISOR.thresholds,
-      });
+      if (live) {
+        const res = await chat({ message: text, threadId: activeId });
+        setExtra((xs) => [
+          ...xs,
+          { id: `x${xs.length}-a`, threadId: tid, role: "assistant", content: res.reply, createdAt: "" },
+        ]);
+        if (res.threadId && res.threadId !== activeId) {
+          setActiveId(res.threadId);
+          getThreads().then(setThreads).catch(() => {});
+        }
+      } else {
+        const home = HOME;
+        const res = await chat({
+          message: text,
+          history: [...messages, mine].map((m) => ({ role: m.role, content: m.content })),
+          location: { name: home.name, lat: home.lat, lon: home.lon, zip: home.zip },
+          profile: ADVISOR.profile,
+          thresholds: ADVISOR.thresholds,
+        });
+        setExtra((xs) => [
+          ...xs,
+          { id: `x${xs.length}-a`, threadId: tid, role: "assistant", content: res.reply, createdAt: "" },
+        ]);
+      }
     } catch {
-      reply =
-        "I can't reach the advisor backend right now, so I won't guess at live conditions. Try again in a moment.";
+      setExtra((xs) => [
+        ...xs,
+        {
+          id: `x${xs.length}-a`,
+          threadId: tid,
+          role: "assistant",
+          content:
+            "I can't reach the advisor backend right now, so I won't guess at live conditions. Try again in a moment.",
+          createdAt: "",
+        },
+      ]);
     }
-    setExtra((xs) => [
-      ...xs,
-      { id: `x${xs.length}-a`, threadId: tid, role: "assistant", content: reply, createdAt: "" },
-    ]);
     setThinking(false);
   }
 
@@ -181,38 +226,66 @@ export default function AdvisorPage() {
       {/* Right rail */}
       <aside className="hidden w-64 shrink-0 flex-col gap-4 lg:flex">
         {live ? (
-          <Card title="Today at a glance">
-            {livePlan ? (
-              <>
-                <div className="flex items-baseline gap-2">
-                  <span
-                    className={`text-3xl font-semibold tracking-tight ${dayScoreTone(livePlan.dayScore)}`}
-                    style={{ fontVariantNumeric: "tabular-nums" }}
-                  >
-                    {livePlan.dayScore}
-                  </span>
-                  <span className="text-xs text-ink-muted">day score</span>
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-ink-2">
-                  {livePlan.summary.length > 180
-                    ? livePlan.summary.slice(0, 180) + "…"
-                    : livePlan.summary}
-                </p>
-                <Link href="/" className="mt-3 block text-xs font-medium text-accent hover:underline">
-                  Open today&apos;s plan →
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm leading-relaxed text-ink-2">
-                  No plan for today yet.
-                </p>
-                <Link href="/" className="mt-2 block text-xs font-medium text-accent hover:underline">
-                  Plan my day →
-                </Link>
-              </>
-            )}
-          </Card>
+          <>
+            <Card
+              title="Conversations"
+              action={
+                <button onClick={() => openThread(null)} className="btn-ghost px-2.5 py-0.5 text-[11px]">
+                  New
+                </button>
+              }
+            >
+              <ul className="flex flex-col gap-1">
+                {threads.length === 0 && (
+                  <li className="text-sm text-ink-muted">Nothing yet — say hi.</li>
+                )}
+                {threads.map((t) => (
+                  <li key={t.id}>
+                    <button
+                      onClick={() => openThread(t.id)}
+                      className={`w-full truncate rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                        t.id === activeId
+                          ? "bg-white/10 font-medium text-ink"
+                          : "text-ink-2 hover:bg-white/5"
+                      }`}
+                    >
+                      {t.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+            <Card title="Today at a glance">
+              {livePlan ? (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className={`text-3xl font-semibold tracking-tight ${dayScoreTone(livePlan.dayScore)}`}
+                      style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {livePlan.dayScore}
+                    </span>
+                    <span className="text-xs text-ink-muted">day score</span>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-2">
+                    {livePlan.summary.length > 160
+                      ? livePlan.summary.slice(0, 160) + "…"
+                      : livePlan.summary}
+                  </p>
+                  <Link href="/" className="mt-3 block text-xs font-medium text-accent hover:underline">
+                    Open today&apos;s plan →
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm leading-relaxed text-ink-2">No plan for today yet.</p>
+                  <Link href="/" className="mt-2 block text-xs font-medium text-accent hover:underline">
+                    Plan my day →
+                  </Link>
+                </>
+              )}
+            </Card>
+          </>
         ) : (
           <>
             <Card title="Conversations">
@@ -220,9 +293,9 @@ export default function AdvisorPage() {
                 {THREADS.map((t) => (
                   <li key={t.id}>
                     <button
-                      onClick={() => setThreadId(t.id)}
+                      onClick={() => setMockThreadId(t.id)}
                       className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                        t.id === threadId
+                        t.id === mockThreadId
                           ? "bg-white/10 font-medium text-ink"
                           : "text-ink-2 hover:bg-white/5"
                       }`}
