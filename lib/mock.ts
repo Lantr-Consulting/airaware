@@ -18,6 +18,7 @@ import type {
 } from "./types";
 
 export const TODAY = "2026-07-31"; // a Friday
+export const NOW_HHMM = "12:00"; // "now" is pinned like the date
 
 export const HOME: Location = {
   name: "Austin, TX",
@@ -404,7 +405,7 @@ export const MESSAGES: Message[] = [
     threadId: "t1",
     role: "assistant",
     content:
-      "I'd skip it. Right now it's **UV 10 (Very high)** and feels like **103°F** — that's over your 95°F caution line *and* at your UV avoid line, at high intensity. The engine scores the lunch window 12/100 for a run.\n\nTwo windows that do pass every check:\n\n- **Tonight 8:45–9:30 pm** — feels like 92°F, UV 0, AQI back down to ~70\n- **Tomorrow 6:30–7:15 am** — the best slot in the next 36 hours\n\nWant me to pencil in tonight?",
+      "I'd skip it. Right now it's **UV 10 (Very high)** and feels like **103°F** — that's over your 95°F caution line **and** at your UV avoid line, at high intensity. The engine scores the lunch window 12/100 for a run.\n\nTwo windows that do pass every check:\n\n- **Tonight 8:45–9:30 pm** — feels like 92°F, UV 0, AQI back down to ~70\n- **Tomorrow 6:30–7:15 am** — the best slot in the next 36 hours\n\nWant me to pencil in tonight?",
     createdAt: `${TODAY}T12:41:00`,
   },
   {

@@ -13,12 +13,14 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 1 — First Ship
+## Status: Milestone 2 — Design pass
 
 All seven screens live on Vercel against typed mock data shaped like the
 real records (`lib/types.ts`, `lib/mock.ts`) — one coherent Austin week,
-hand-checked against the official band scales in `lib/bands.ts`. The full
-design and build plan is in [DESIGN.md](DESIGN.md).
+hand-checked against the official band scales in `lib/bands.ts`. The design
+pass added the feels-like hero curve and now-marker to the timeline, the
+wordmark favicon, and a browser-verified polish round. The full design and
+build plan is in [DESIGN.md](DESIGN.md).
 
 - **Today** — day score, condition tiles in official band colors, hourly timeline, proposal cards
 - **Planner** — the week: activities × forecast bands, re-plan badges
@@ -33,8 +35,8 @@ design and build plan is in [DESIGN.md](DESIGN.md).
 | Milestone | What ships |
 |---|---|
 | 0. Design | This document set: scope, control model, data sources, plan ✅ |
-| 1. First Ship | Frontend on Vercel, all seven screens on typed mock data ✅ *(this one)* |
-| 2. Design pass | Band-color token system, hourly timeline, visual polish |
+| 1. First Ship | Frontend on Vercel, all seven screens on typed mock data ✅ |
+| 2. Design pass | Band-color token system, hourly timeline, visual polish ✅ *(this one)* |
 | 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data |
 | 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline |
 | 5. Memory & accounts | Supabase database, sign-in, one advisor per user |

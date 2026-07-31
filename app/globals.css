@@ -48,7 +48,9 @@
 }
 
 body {
-  background: var(--page);
+  background:
+    radial-gradient(1100px 480px at 72% -12%, rgba(76, 195, 255, 0.07), transparent 60%),
+    var(--page);
   color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI",
     sans-serif;

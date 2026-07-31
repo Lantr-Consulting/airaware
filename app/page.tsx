@@ -3,11 +3,11 @@ import { PlanItemCard } from "@/components/plan-item-card";
 import { Card, ConditionTile } from "@/components/ui";
 import { aqiBand, dayScoreTone, heatBand, pollenBand, uvBand } from "@/lib/bands";
 import { fmtWeekday } from "@/lib/format";
-import { ACTIVITIES, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
+import { ACTIVITIES, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
 import { activitiesOn } from "@/lib/schedule";
 
 export default function TodayPage() {
-  const now = TODAY_HOURLY.find((x) => x.time.includes("T12:00"))!;
+  const now = TODAY_HOURLY.find((x) => x.time.includes(`T${NOW_HHMM}`))!;
   const plan = TODAY_PLAN;
   const schedule = activitiesOn(ACTIVITIES, TODAY);
   const proposals = plan.items.filter((i) => i.status === "proposed");
@@ -47,7 +47,7 @@ export default function TodayPage() {
       </div>
 
       <Card title="Your day against the sky" action={<BandLegend />}>
-        <DayTimeline hours={TODAY_HOURLY} activities={schedule} />
+        <DayTimeline hours={TODAY_HOURLY} activities={schedule} nowTime={NOW_HHMM} />
       </Card>
 
       {proposals.length > 0 && (

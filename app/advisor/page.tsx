@@ -10,19 +10,26 @@ import type { Message } from "@/lib/types";
 function Rich({ text }: { text: string }) {
   return (
     <>
-      {text.split("\n").map((line, li) => (
-        <p key={li} className={li > 0 ? "mt-2" : ""}>
-          {line.split("**").map((part, pi) =>
-            pi % 2 === 1 ? (
-              <strong key={pi} className="font-semibold text-ink">
-                {part}
-              </strong>
-            ) : (
-              <span key={pi}>{part}</span>
-            )
-          )}
-        </p>
-      ))}
+      {text.split("\n").map((line, li) => {
+        const bullet = line.startsWith("- ");
+        const body = bullet ? line.slice(2) : line;
+        return (
+          <p key={li} className={`${li > 0 ? "mt-2" : ""} ${bullet ? "flex gap-2" : ""}`}>
+            {bullet && <span aria-hidden className="text-accent">•</span>}
+            <span>
+              {body.split("**").map((part, pi) =>
+                pi % 2 === 1 ? (
+                  <strong key={pi} className="font-semibold text-ink">
+                    {part}
+                  </strong>
+                ) : (
+                  <span key={pi}>{part}</span>
+                )
+              )}
+            </span>
+          </p>
+        );
+      })}
     </>
   );
 }
