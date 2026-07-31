@@ -13,16 +13,24 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 7 — Workspace
+## Status: Milestone 8 — Briefings (always-on)
 
-One coherent agent. Plan runs are **async**: the button returns instantly,
-a progress bar polls the run's row in the database (either backend worker
-can answer), and you can **steer mid-run** — notes land on the next cycle.
-A re-plan **supersedes** rather than overwrites, and the new plan says what
-changed, diffed from the old plan's conditions snapshot — never invented.
-Advisor conversations are **persistent threads** (server-side context: your
-rows, your plan, the live sky), and the per-user run lock lives in Postgres
-via compare-and-swap, because an in-memory lock dies with two workers.
+The advisor now works while you don't. **Briefings** are standing
+instructions with real cadences — daily or weekly at your local hour, or
+**on-change**, firing the moment a signal crosses into a band you chose
+(and staying quiet while it remains there). A 60-second scheduler runs in
+every backend worker; `last_run_at` doubles as a compare-and-swap claim, so
+exactly one worker fires any briefing. Reports are grounded completions
+over your live conditions, today's plan, and your schedule — same
+never-invent-numbers rule as everywhere else. New accounts start with a
+seeded Morning briefing; the page is fully live (create, toggle, run now,
+delete). Every screen now also ships in **light mode** — a second token
+set with a persisted sun/moon toggle.
+
+From Milestone 7: plan runs are **async** with a progress bar polling the
+run's database row, **mid-run steering**, supersession notes diffed from
+the old plan's conditions snapshot, persistent advisor threads, and the
+per-user run lock in Postgres via compare-and-swap.
 
 From Milestone 6: AirAware works like a product, anywhere on Earth. New
 accounts land on a **three-step welcome** and nothing plans until an
@@ -74,8 +82,8 @@ sample data offline. Full design in [DESIGN.md](DESIGN.md).
 | 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline ✅ |
 | 5. Memory & accounts | Supabase database, sign-in, one advisor per user ✅ |
 | 6. Make it feel real | Onboarding/Activate, any-city home, decline-reason lessons, product polish ✅ |
-| 7. Workspace | Async plan runs + steering, persistent threads, supersession, DB run lock ✅ *(this one)* |
-| 8. Briefings | Scheduler with cross-worker claim, on-change triggers |
+| 7. Workspace | Async plan runs + steering, persistent threads, supersession, DB run lock ✅ |
+| 8. Briefings | Scheduler with cross-worker claim, on-change triggers, light mode ✅ *(this one)* |
 | 9. Evals | Historical replay benchmark: missed risks, false alarms, measured improvement |
 | 10. Polish + Blueprint | Product polish, BLUEPRINT.md demo package, BUILD_GUIDE.md |
 

@@ -6,6 +6,7 @@ import { supabase } from "./supabase";
 import type {
   Activity,
   AdvisorProfile,
+  Briefing,
   DailySummary,
   DayPlan,
   HourlyConditions,
@@ -198,6 +199,32 @@ export function declineItem(id: string, reason: string): Promise<PlanItem> {
     method: "POST",
     body: JSON.stringify({ reason }),
   });
+}
+
+export function getBriefings(): Promise<Briefing[]> {
+  return req<{ briefings: Briefing[] }>("/briefings").then((r) => r.briefings);
+}
+
+export function createBriefing(fields: {
+  title: string;
+  prompt: string;
+  cadence: string;
+  hourLocal?: number;
+  trigger?: { signal: string; severity: number } | null;
+}): Promise<Briefing> {
+  return req("/briefings", { method: "POST", body: JSON.stringify(fields) });
+}
+
+export function updateBriefing(id: string, patch: Partial<Briefing>): Promise<Briefing> {
+  return req(`/briefings/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+}
+
+export function deleteBriefing(id: string): Promise<void> {
+  return req(`/briefings/${id}`, { method: "DELETE" });
+}
+
+export function runBriefing(id: string): Promise<{ report: string; createdAt: string }> {
+  return req(`/briefings/${id}/run`, { method: "POST", body: "{}" });
 }
 
 export function chat(args: {

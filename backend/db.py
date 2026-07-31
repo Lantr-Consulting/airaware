@@ -87,6 +87,13 @@ def ensure_advisor(user_id: str, email: str, defaults: dict, default_activities:
     created = _rest("POST", "aa_advisors", json=row, extra_headers=_REPR)[0]
     for a in default_activities:
         create_activity(user_id, a)
+    # Every new account starts with one sensible standing briefing.
+    create_briefing(user_id, {
+        "title": "Morning briefing",
+        "prompt": "Summarize today: the day score if a plan exists, anything risky about my scheduled activities, what to wear or bring, and the single best outdoor window.",
+        "cadence": "daily",
+        "hourLocal": 7,
+    })
     return created
 
 
@@ -339,6 +346,95 @@ def append_steer(user_id: str, run_id: str, note: str) -> dict | None:
     _rest("PATCH", "aa_plan_runs", params={"id": f"eq.{run_id}"}, json={"steer": steer})
     run["steer"] = steer
     return run
+
+
+# ---------------------------------------------------------------------------
+# Briefings + their runs
+# ---------------------------------------------------------------------------
+
+def briefing_out(row: dict) -> dict:
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "prompt": row["prompt"],
+        "cadence": row["cadence"],
+        "hourLocal": row["hour_local"],
+        "trigger": row.get("trigger"),
+        "enabled": row["enabled"],
+        "lastRunAt": row.get("last_run_at"),
+    }
+
+
+def _briefing_in(fields: dict) -> dict:
+    mapping = {"title": "title", "prompt": "prompt", "cadence": "cadence",
+               "hourLocal": "hour_local", "trigger": "trigger", "enabled": "enabled"}
+    return {mapping[k]: v for k, v in fields.items() if k in mapping}
+
+
+def list_briefings(user_id: str) -> list[dict]:
+    return _rest("GET", "aa_briefings",
+                 params={"user_id": f"eq.{user_id}", "order": "created_at"})
+
+
+def get_briefing(user_id: str, briefing_id: str) -> dict | None:
+    rows = _rest("GET", "aa_briefings",
+                 params={"id": f"eq.{briefing_id}", "user_id": f"eq.{user_id}", "limit": 1})
+    return rows[0] if rows else None
+
+
+def create_briefing(user_id: str, fields: dict) -> dict:
+    row = {"user_id": user_id, **_briefing_in(fields)}
+    return _rest("POST", "aa_briefings", json=row, extra_headers=_REPR)[0]
+
+
+def update_briefing(user_id: str, briefing_id: str, fields: dict) -> dict | None:
+    rows = _rest("PATCH", "aa_briefings",
+                 params={"id": f"eq.{briefing_id}", "user_id": f"eq.{user_id}"},
+                 json=_briefing_in(fields), extra_headers=_REPR)
+    return rows[0] if rows else None
+
+
+def delete_briefing(user_id: str, briefing_id: str) -> None:
+    _rest("DELETE", "aa_briefings",
+          params={"id": f"eq.{briefing_id}", "user_id": f"eq.{user_id}"})
+
+
+def all_enabled_briefings() -> list[dict]:
+    """Scheduler scan — every user's enabled briefings (service key)."""
+    return _rest("GET", "aa_briefings", params={"enabled": "eq.true", "limit": 500})
+
+
+def claim_briefing(briefing_id: str, fire_cutoff_iso: str) -> bool:
+    """CAS: set last_run_at=now only if it predates this firing window.
+    With two workers, exactly one PATCH matches and returns a row."""
+    rows = _rest("PATCH", "aa_briefings",
+                 params={
+                     "id": f"eq.{briefing_id}",
+                     "or": f"(last_run_at.is.null,last_run_at.lt.{fire_cutoff_iso})",
+                 },
+                 json={"last_run_at": datetime.now(timezone.utc).isoformat()},
+                 extra_headers=_REPR)
+    return bool(rows)
+
+
+def set_trigger_state(briefing_id: str, state: dict) -> None:
+    _rest("PATCH", "aa_briefings", params={"id": f"eq.{briefing_id}"},
+          json={"trigger_state": state})
+
+
+def create_briefing_run(user_id: str, briefing_id: str, report: str) -> dict:
+    return _rest("POST", "aa_briefing_runs",
+                 json={"user_id": user_id, "briefing_id": briefing_id, "report": report},
+                 extra_headers=_REPR)[0]
+
+
+def runs_for_briefings(user_id: str, briefing_ids: list[str], limit: int = 40) -> list[dict]:
+    if not briefing_ids:
+        return []
+    ids = ",".join(briefing_ids)
+    return _rest("GET", "aa_briefing_runs",
+                 params={"user_id": f"eq.{user_id}", "briefing_id": f"in.({ids})",
+                         "order": "created_at.desc", "limit": limit})
 
 
 # ---------------------------------------------------------------------------

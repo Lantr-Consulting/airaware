@@ -346,6 +346,105 @@ def decline_item(item_id: str, req: DeclineRequest, user: dict = Depends(auth.cu
     return db.item_out(updated)
 
 
+# ---------- Briefings (Milestone 8: always-on) ----------
+
+class BriefingRequest(BaseModel):
+    title: str
+    prompt: str
+    cadence: str = "daily"
+    hourLocal: int = 7
+    trigger: dict | None = None
+
+
+class BriefingPatch(BaseModel):
+    title: str | None = None
+    prompt: str | None = None
+    cadence: str | None = None
+    hourLocal: int | None = None
+    trigger: dict | None = None
+    enabled: bool | None = None
+
+
+VALID_CADENCES = {"manual", "daily", "weekly", "on_change"}
+
+
+def _briefings_view(user_id: str) -> list[dict]:
+    rows = db.list_briefings(user_id)
+    runs = db.runs_for_briefings(user_id, [r["id"] for r in rows])
+    by_briefing: dict[str, list[dict]] = {}
+    for run in runs:
+        by_briefing.setdefault(run["briefing_id"], []).append(run)
+    out = []
+    for row in rows:
+        b = db.briefing_out(row)
+        mine = by_briefing.get(row["id"], [])
+        b["latestReport"] = mine[0]["report"] if mine else None
+        b["pastRuns"] = [
+            {"date": r["created_at"][:10], "summary": r["report"][:140]}
+            for r in mine[1:5]
+        ]
+        out.append(b)
+    return out
+
+
+@app.get("/briefings")
+def briefings_list(user: dict = Depends(auth.current_user)):
+    _me(user)
+    return {"briefings": _briefings_view(user["id"])}
+
+
+@app.post("/briefings")
+def briefings_create(req: BriefingRequest, user: dict = Depends(auth.current_user)):
+    _me(user)
+    if req.cadence not in VALID_CADENCES:
+        raise HTTPException(status_code=400, detail="bad cadence")
+    fields = req.model_dump()
+    fields["hourLocal"] = max(0, min(23, fields["hourLocal"]))
+    row = db.create_briefing(user["id"], fields)
+    return db.briefing_out(row)
+
+
+@app.patch("/briefings/{briefing_id}")
+def briefings_update(briefing_id: str, req: BriefingPatch, user: dict = Depends(auth.current_user)):
+    fields = req.model_dump(exclude_none=True)
+    if "cadence" in fields and fields["cadence"] not in VALID_CADENCES:
+        raise HTTPException(status_code=400, detail="bad cadence")
+    row = db.update_briefing(user["id"], briefing_id, fields)
+    if row is None:
+        raise HTTPException(status_code=404, detail="briefing not found")
+    return db.briefing_out(row)
+
+
+@app.delete("/briefings/{briefing_id}")
+def briefings_delete(briefing_id: str, user: dict = Depends(auth.current_user)):
+    db.delete_briefing(user["id"], briefing_id)
+    return {"ok": True}
+
+
+@app.post("/briefings/{briefing_id}/run")
+def briefings_run(briefing_id: str, user: dict = Depends(auth.current_user)):
+    if llm is None:
+        raise HTTPException(status_code=503, detail="LLM not configured")
+    row = db.get_briefing(user["id"], briefing_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="briefing not found")
+    advisor = _me(user)
+    import briefing as briefing_engine
+
+    run = briefing_engine.run_briefing(user["id"], row, advisor)
+    db.claim_briefing(briefing_id, datetime.now(timezone.utc).isoformat())
+    return {"report": run["report"], "createdAt": run["created_at"]}
+
+
+@app.on_event("startup")
+def _start_scheduler():
+    """One scheduler thread per worker; the CAS claim in claim_briefing
+    makes any given firing exclusive."""
+    import briefing as briefing_engine
+
+    threading.Thread(target=briefing_engine.scheduler_loop, daemon=True).start()
+
+
 # ---------- LLM: profile interpreter ----------
 
 class InterpretRequest(BaseModel):

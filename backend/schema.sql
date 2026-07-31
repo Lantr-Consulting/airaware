@@ -107,6 +107,43 @@ create table if not exists aa_messages (
   created_at timestamptz not null default now()
 );
 
+-- Milestone 8: Briefings — standing instructions the advisor runs alone.
+-- last_run_at doubles as the scheduler's compare-and-swap claim column:
+-- with two workers, exactly one wins the PATCH and fires the briefing.
+
+create table if not exists aa_briefings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  prompt text not null,
+  cadence text not null default 'daily',   -- manual | daily | weekly | on_change
+  hour_local int not null default 7,
+  trigger jsonb,                            -- on_change: {signal, severity}
+  trigger_state jsonb not null default '{}',
+  enabled boolean not null default true,
+  last_run_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists aa_briefing_runs (
+  id uuid primary key default gen_random_uuid(),
+  briefing_id uuid not null references aa_briefings(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  report text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table aa_briefings enable row level security;
+alter table aa_briefing_runs enable row level security;
+
+drop policy if exists "read own briefings" on aa_briefings;
+create policy "read own briefings" on aa_briefings
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "read own briefing runs" on aa_briefing_runs;
+create policy "read own briefing runs" on aa_briefing_runs
+  for select using (auth.uid() = user_id);
+
 alter table aa_plan_runs enable row level security;
 alter table aa_threads enable row level security;
 alter table aa_messages enable row level security;
