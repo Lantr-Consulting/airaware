@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BandLegend, DayTimeline } from "@/components/day-timeline";
 import { PlanItemCard } from "@/components/plan-item-card";
@@ -10,17 +11,22 @@ import {
   declineItem,
   generatePlan,
   getConditions,
+  getMe,
   getTodayPlan,
+  listActivities,
   type LiveConditions,
 } from "@/lib/api";
 import { fmtWeekday } from "@/lib/format";
-import { ACTIVITIES, HOME, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
+import { ACTIVITIES, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
 import { activitiesOn } from "@/lib/schedule";
-import type { DayPlan, PlanItem } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+import type { Activity, DayPlan, PlanItem } from "@/lib/types";
 
 export default function TodayPage() {
   const [cond, setCond] = useState<LiveConditions | null>(null);
   const [plan, setPlan] = useState<DayPlan | null>(null);
+  const [myActivities, setMyActivities] = useState<Activity[] | null>(null);
+  const [signedOut, setSignedOut] = useState(false);
   const [offline, setOffline] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -28,18 +34,28 @@ export default function TodayPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [c, p] = await Promise.allSettled([
-        getConditions({ lat: HOME.lat, lon: HOME.lon, zip: HOME.zip, name: HOME.name }),
-        getTodayPlan(),
-      ]);
+      const { data } = await supabase.auth.getSession();
       if (cancelled) return;
-      if (c.status === "fulfilled") {
-        setCond(c.value);
-        if (p.status === "fulfilled") setPlan(p.value);
-        // a 404 (or any plan error) just means: offer "Plan my day"
-      } else {
-        setOffline(true); // full sample-data fallback
+      if (!data.session) {
+        setSignedOut(true); // sample everything + a sign-in nudge
+        return;
       }
+      const [me, p, acts] = await Promise.allSettled([getMe(), getTodayPlan(), listActivities()]);
+      if (cancelled) return;
+      const home = me.status === "fulfilled" ? me.value.homeLocation : null;
+      if (home === null) {
+        setOffline(true);
+        return;
+      }
+      try {
+        setCond(await getConditions({ lat: home.lat, lon: home.lon, zip: home.zip, name: home.name }));
+      } catch {
+        if (!cancelled) setOffline(true);
+        return;
+      }
+      if (cancelled) return;
+      if (p.status === "fulfilled") setPlan(p.value);
+      if (acts.status === "fulfilled") setMyActivities(acts.value);
     })();
     return () => {
       cancelled = true;
@@ -76,13 +92,13 @@ export default function TodayPage() {
   }
 
   // ----- pick live or sample data -----
-  const live = !offline && cond !== null;
+  const live = !signedOut && !offline && cond !== null;
   const activePlan = live ? plan : TODAY_PLAN;
   const hourly = live ? cond.hourly.slice(6, 22) : TODAY_HOURLY;
   const now = live ? cond.hourly[cond.nowIndex] : TODAY_HOURLY.find((x) => x.time.includes(`T${NOW_HHMM}`))!;
   const dateIso = live ? (plan?.date ?? new Date().toISOString().slice(0, 10)) : TODAY;
   const nowTime = now.time.slice(11, 16);
-  const schedule = activitiesOn(ACTIVITIES, dateIso);
+  const schedule = activitiesOn(live && myActivities ? myActivities : ACTIVITIES, dateIso);
   const proposals = activePlan?.items.filter((i) => i.status === "proposed") ?? [];
   const onPlan = activePlan?.items.filter((i) => i.status !== "proposed") ?? [];
   const handlers = live ? { onAccept, onDecline } : {};
@@ -99,6 +115,11 @@ export default function TodayPage() {
           >
             {live ? "Live" : "Sample"}
           </span>
+          {signedOut && (
+            <Link href="/signin" className="text-xs font-medium text-accent hover:underline">
+              Sign in to plan your real day →
+            </Link>
+          )}
         </div>
 
         {activePlan ? (

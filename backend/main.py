@@ -12,17 +12,19 @@ import json
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel
 
-import env as environment
-import exposure
-import store
-from bands import aqi_band, heat_band, uv_band
+load_dotenv()  # must run before auth/db read SUPABASE_* at import time
 
-load_dotenv()
+import auth  # noqa: E402
+import db  # noqa: E402
+import env as environment  # noqa: E402
+import exposure  # noqa: E402
+import store  # noqa: E402
+from bands import aqi_band, heat_band, uv_band  # noqa: E402
 
 app = FastAPI(title="AirAware backend")
 
@@ -71,7 +73,98 @@ def conditions_search(q: str = Query(..., min_length=2)):
         raise HTTPException(status_code=502, detail=f"geocoding upstream: {e}")
 
 
-# ---------- Day plans (Milestone 4: one shared demo advisor, plans.json) ----------
+# ---------- Account (Milestone 5: one advisor per user, rows in Supabase) ----------
+
+def _me(user: dict) -> dict:
+    row = db.ensure_advisor(user["id"], user["email"], store.DEFAULT_ADVISOR, store.DEFAULT_ACTIVITIES)
+    return db.advisor_out(row)
+
+
+@app.get("/me")
+def me(user: dict = Depends(auth.current_user)):
+    return {**_me(user), "email": user["email"]}
+
+
+class SettingsRequest(BaseModel):
+    profile: dict | None = None
+    thresholds: dict | None = None
+    homeLocation: dict | None = None
+    units: str | None = None
+    paused: bool | None = None
+
+
+@app.patch("/me/settings")
+def me_settings(req: SettingsRequest, user: dict = Depends(auth.current_user)):
+    _me(user)  # ensure the row exists
+    fields = {}
+    if req.profile is not None:
+        fields["profile"] = req.profile
+    if req.thresholds is not None:
+        fields["thresholds"] = req.thresholds
+    if req.homeLocation is not None and {"name", "lat", "lon", "tz"} <= set(req.homeLocation):
+        fields["home_location"] = req.homeLocation
+    if req.units in ("imperial", "metric"):
+        fields["units"] = req.units
+    if req.paused is not None:
+        fields["paused"] = bool(req.paused)
+    if not fields:
+        raise HTTPException(status_code=400, detail="nothing to update")
+    return db.advisor_out(db.update_advisor(user["id"], fields))
+
+
+# ---------- Activities ----------
+
+class ActivityRequest(BaseModel):
+    name: str
+    kind: str
+    daysOfWeek: list[int]
+    startTime: str
+    durationMin: int
+    intensity: str
+    flexibility: str
+    indoorAlternative: str | None = None
+    enabled: bool = True
+
+
+@app.get("/activities")
+def activities_list(user: dict = Depends(auth.current_user)):
+    _me(user)
+    return {"activities": [db.activity_out(r) for r in db.list_activities(user["id"])]}
+
+
+@app.post("/activities")
+def activities_create(req: ActivityRequest, user: dict = Depends(auth.current_user)):
+    _me(user)
+    return db.activity_out(db.create_activity(user["id"], req.model_dump()))
+
+
+class ActivityPatch(BaseModel):
+    name: str | None = None
+    kind: str | None = None
+    daysOfWeek: list[int] | None = None
+    startTime: str | None = None
+    durationMin: int | None = None
+    intensity: str | None = None
+    flexibility: str | None = None
+    indoorAlternative: str | None = None
+    enabled: bool | None = None
+
+
+@app.patch("/activities/{activity_id}")
+def activities_update(activity_id: str, req: ActivityPatch, user: dict = Depends(auth.current_user)):
+    row = db.update_activity(user["id"], activity_id, req.model_dump(exclude_none=True))
+    if row is None:
+        raise HTTPException(status_code=404, detail="activity not found")
+    return db.activity_out(row)
+
+
+@app.delete("/activities/{activity_id}")
+def activities_delete(activity_id: str, user: dict = Depends(auth.current_user)):
+    db.delete_activity(user["id"], activity_id)
+    return {"ok": True}
+
+
+# ---------- Day plans (per user) ----------
 
 class GenerateRequest(BaseModel):
     date: str | None = None
@@ -85,74 +178,87 @@ class DeclineRequest(BaseModel):
     reason: str
 
 
+def _advisor_ctx(user: dict) -> tuple[dict, list[dict]]:
+    advisor = _me(user)
+    activities = [db.activity_out(r) for r in db.list_activities(user["id"])]
+    return advisor, activities
+
+
 @app.get("/plan/today")
-def plan_today():
-    plan = store.get_plan(store.today_local())
+def plan_today(user: dict = Depends(auth.current_user)):
+    advisor = _me(user)
+    plan = db.get_plan(user["id"], store.today_local(advisor["homeLocation"]["tz"]))
     if plan is None:
         raise HTTPException(status_code=404, detail="no plan for today yet")
     return plan
 
 
 @app.post("/plan/generate")
-def plan_generate(req: GenerateRequest):
+def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="LLM not configured")
-    date_iso = req.date or store.today_local()
-    if date_iso != store.today_local():
-        raise HTTPException(status_code=400, detail="Milestone 4 plans today only — multi-day arrives with async runs")
+    advisor, activities = _advisor_ctx(user)
+    if advisor["paused"]:
+        raise HTTPException(status_code=409, detail="advisor is paused")
+    today = store.today_local(advisor["homeLocation"]["tz"])
+    date_iso = req.date or today
+    if date_iso != today:
+        raise HTTPException(status_code=400, detail="plans are today-only until async runs arrive")
     import agent  # heavy import; loaded on first use
 
     try:
-        plan = agent.run_plan(date_iso)
+        plan = agent.run_plan(date_iso, advisor, activities)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"planner failed: {e}")
-    store.put_plan(plan)
-    return plan
+    return db.put_plan(user["id"], plan)
 
 
 @app.post("/plan-items/{item_id}/accept")
-def accept_item(item_id: str, req: AcceptRequest):
+def accept_item(item_id: str, req: AcceptRequest, user: dict = Depends(auth.current_user)):
     """Accept re-measures against the LATEST forecast — never the one the
     proposal was born under. If an avoid-line check fails now, we refuse."""
-    home = store.DEFAULT_ADVISOR["home"]
+    row = db.get_item(user["id"], item_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="plan item not found")
+    advisor, activities = _advisor_ctx(user)
+    home = advisor["homeLocation"]
     hourly = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))["hourly"]
 
-    result: dict = {}
+    item = db.item_out(row)
+    if req.window and "start" in req.window and "end" in req.window:
+        item["window"] = {"start": req.window["start"], "end": req.window["end"]}
+    activity = next((a for a in activities if a["id"] == item.get("activityId")), None)
+    exposure.annotate_item(item, hourly, activity, advisor["thresholds"], advisor["profile"])
 
-    def mutate(item, plan):
-        if req.window and "start" in req.window and "end" in req.window:
-            item["window"] = {"start": req.window["start"], "end": req.window["end"]}
-        activity = store.activity(item.get("activityId") or "")
-        exposure.annotate_item(item, hourly, activity, store.DEFAULT_ADVISOR["thresholds"], store.DEFAULT_ADVISOR["profile"])
-        blocked = any(
-            not c["pass"] and "avoid" in c.get("thresholdSource", "") for c in item.get("checks", [])
-        )
-        if blocked:
-            result["blocked"] = True
-        else:
-            item["status"] = "accepted"
-        result["item"] = item
-
-    if store.update_item(item_id, mutate) is None:
-        raise HTTPException(status_code=404, detail="plan item not found")
-    if result.get("blocked"):
+    blocked = any(not c["pass"] and "avoid" in c.get("thresholdSource", "") for c in item["checks"])
+    fields = {
+        "window": item.get("window"),
+        "checks": item["checks"],
+        "severity": item["severity"],
+        "score": item.get("score"),
+        "kind": item["kind"],  # the veto may have rewritten it
+        "title": item["title"],
+        "rationale": item["rationale"],
+    }
+    if blocked:
+        db.update_item(user["id"], item_id, fields)
         raise HTTPException(
             status_code=409,
-            detail={"message": "Conditions moved — this window now crosses an avoid line. Fresh checks attached.", "item": result["item"]},
+            detail={"message": "Conditions moved — this window now crosses an avoid line. Fresh checks attached.", "item": item},
         )
-    return result["item"]
+    updated = db.update_item(user["id"], item_id, {**fields, "status": "accepted"})
+    return db.item_out(updated)
 
 
 @app.post("/plan-items/{item_id}/decline")
-def decline_item(item_id: str, req: DeclineRequest):
-    def mutate(item, plan):
-        item["status"] = "declined"
-        item["feedback"] = {"reason": req.reason.strip()[:300]}
-
-    item = store.update_item(item_id, mutate)
-    if item is None:
+def decline_item(item_id: str, req: DeclineRequest, user: dict = Depends(auth.current_user)):
+    updated = db.update_item(
+        user["id"], item_id,
+        {"status": "declined", "feedback": {"reason": req.reason.strip()[:300]}},
+    )
+    if updated is None:
         raise HTTPException(status_code=404, detail="plan item not found")
-    return item
+    return db.item_out(updated)
 
 
 # ---------- LLM: profile interpreter ----------

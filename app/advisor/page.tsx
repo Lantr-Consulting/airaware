@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui";
-import { chat } from "@/lib/api";
+import { chat, getMe, type Me } from "@/lib/api";
 import { ADVISOR, HOME, MESSAGES, PLAN_RUNS, THREADS } from "@/lib/mock";
+import { supabase } from "@/lib/supabase";
 import type { Message } from "@/lib/types";
 
 // Minimal bold-only rendering for mock messages; real markdown arrives with
@@ -56,6 +57,21 @@ export default function AdvisorPage() {
   const [extra, setExtra] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session || cancelled) return;
+      try {
+        const m = await getMe();
+        if (!cancelled) setMe(m);
+      } catch {}
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const messages = [
     ...MESSAGES.filter((m) => m.threadId === threadId),
@@ -77,12 +93,13 @@ export default function AdvisorPage() {
     setThinking(true);
     let reply: string;
     try {
+      const home = me?.homeLocation ?? HOME;
       reply = await chat({
         message: text,
         history: [...messages, mine].map((m) => ({ role: m.role, content: m.content })),
-        location: { name: HOME.name, lat: HOME.lat, lon: HOME.lon, zip: HOME.zip },
-        profile: ADVISOR.profile,
-        thresholds: ADVISOR.thresholds,
+        location: { name: home.name, lat: home.lat, lon: home.lon, zip: home.zip },
+        profile: me?.profile ?? ADVISOR.profile,
+        thresholds: me?.thresholds ?? ADVISOR.thresholds,
       });
     } catch {
       reply =

@@ -13,9 +13,17 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 4 — Hands
+## Status: Milestone 5 — Memory & accounts
 
-The planner is real. `backend/exposure.py` is the deterministic exposure
+AirAware remembers. Magic-link sign-in (Supabase), one advisor per user
+with Row-Level Security ("two people, two worlds"), your own recurring
+activities (seeded with a starter week, editable in the app), and plans
+that survive restarts in Postgres instead of a JSON file. The same day can
+read differently for two people: thresholds are per-user, so a window
+that's "great" for one account is vetoed for a grass-allergic one. Signed
+out, every screen still works on sample data.
+
+From Milestone 4: the planner is real. `backend/exposure.py` is the deterministic exposure
 engine — NWS Rothfusz heat index, WHO/EPA/Pollen.com bands,
 intensity-scaled thresholds, all **unit-tested against published tables**
 (`pytest`). A LangChain agent builds the day plan holding the engine as a
@@ -44,8 +52,8 @@ sample data offline. Full design in [DESIGN.md](DESIGN.md).
 | 1. First Ship | Frontend on Vercel, all seven screens on typed mock data ✅ |
 | 2. Design pass | Band-color token system, hourly timeline, visual polish ✅ |
 | 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data ✅ |
-| 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline ✅ *(this one)* |
-| 5. Memory & accounts | Supabase database, sign-in, one advisor per user |
+| 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline ✅ |
+| 5. Memory & accounts | Supabase database, sign-in, one advisor per user ✅ *(this one)* |
 | 6. Make it feel real | Onboarding/Activate, decline-reason lessons, good windows, US pollen adapter |
 | 7. Workspace | Async plan runs, threads, forecast-change supersession |
 | 8. Briefings | Scheduler with cross-worker claim, on-change triggers |

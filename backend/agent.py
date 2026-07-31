@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import os
-import uuid
 
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
@@ -22,7 +21,13 @@ import exposure
 import store
 
 # Context for the current run — set by run_plan, read by the tools.
-_ctx: dict = {"hourly": [], "date": None}
+# Milestone 5: the schedule, thresholds, and profile are the signed-in
+# user's own rows, not a shared demo advisor.
+_ctx: dict = {"hourly": [], "date": None, "activities": [], "thresholds": {}, "profile": {}}
+
+
+def _find_activity(activity_id: str) -> dict | None:
+    return next((a for a in _ctx["activities"] if a["id"] == activity_id), None)
 
 ADJUSTMENT_KINDS = {"shift", "shorten", "relocate", "indoor"}
 ALL_KINDS = ADJUSTMENT_KINDS | {"keep", "gear", "good_window", "warning"}
@@ -51,7 +56,7 @@ def get_schedule() -> str:
     """The user's scheduled activities for the day being planned: id, name,
     window, intensity, flexibility (fixed / flex_time / flex_day), and any
     indoor alternative."""
-    entries = store.schedule_for(_ctx["date"])
+    entries = store.schedule_for(_ctx["activities"], _ctx["date"])
     return json.dumps(
         [
             {
@@ -73,7 +78,7 @@ def score_window(activity_id: str, start: str, end: str) -> str:
     deterministic exposure engine. Use this BEFORE proposing any window.
     Returns score 0-100, severity, whether 'great' is allowed, and every
     check with the number that fired."""
-    activity = store.activity(activity_id)
+    activity = _find_activity(activity_id)
     if activity is None and activity_id not in ("", "none", "free"):
         return f"ERROR: unknown activity_id '{activity_id}'. Use get_schedule for valid ids, or 'free' for an unscheduled window."
     try:
@@ -83,8 +88,8 @@ def score_window(activity_id: str, start: str, end: str) -> str:
     verdict = exposure.evaluate_window(
         hours,
         (activity or {}).get("intensity", "moderate"),
-        store.DEFAULT_ADVISOR["thresholds"],
-        store.DEFAULT_ADVISOR["profile"],
+        _ctx["thresholds"],
+        _ctx["profile"],
     )
     return json.dumps(
         {
@@ -164,21 +169,26 @@ def _extract_json(text: str) -> dict:
     raise ValueError("unbalanced JSON in agent output")
 
 
-def run_plan(date_iso: str) -> dict:
-    """Generate, engine-check, and return the day plan record."""
-    home = store.DEFAULT_ADVISOR["home"]
+def run_plan(date_iso: str, advisor: dict, activities: list[dict]) -> dict:
+    """Generate, engine-check, and return the day plan record for one user."""
+    home = advisor["homeLocation"]
     hourly = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))["hourly"]
-    _ctx["hourly"] = hourly
-    _ctx["date"] = date_iso
+    _ctx.update(
+        hourly=hourly,
+        date=date_iso,
+        activities=activities,
+        thresholds=advisor["thresholds"],
+        profile=advisor["profile"],
+    )
 
     result = _build_executor().invoke(
         {"input": f"Build the day plan for {date_iso}. The user's home is {home['name']}."}
     )
     raw = _extract_json(result["output"])
 
-    thresholds = store.DEFAULT_ADVISOR["thresholds"]
-    profile = store.DEFAULT_ADVISOR["profile"]
-    schedule = store.schedule_for(date_iso)
+    thresholds = advisor["thresholds"]
+    profile = advisor["profile"]
+    schedule = store.schedule_for(activities, date_iso)
 
     items = []
     for raw_item in (raw.get("items") or [])[:6]:
@@ -188,11 +198,10 @@ def run_plan(date_iso: str) -> dict:
         window = raw_item.get("window")
         if window and not (isinstance(window, dict) and "start" in window and "end" in window):
             window = None
-        activity = store.activity(raw_item.get("activityId") or "")
+        activity = _find_activity(raw_item.get("activityId") or "")
         if kind in ADJUSTMENT_KINDS and activity and activity["flexibility"] == "fixed" and kind == "shift":
             continue  # the engine's schedule rules also dispose
         item = {
-            "id": uuid.uuid4().hex[:12],
             "activityId": activity["id"] if activity else None,
             "kind": kind,
             "title": str(raw_item.get("title", ""))[:120],
@@ -206,7 +215,6 @@ def run_plan(date_iso: str) -> dict:
         items.append(exposure.annotate_item(item, hourly, activity, thresholds, profile))
 
     return {
-        "id": uuid.uuid4().hex[:12],
         "date": date_iso,
         "location": {"name": home["name"], "lat": home["lat"], "lon": home["lon"], "tz": home["tz"]},
         "status": "active",

@@ -2,7 +2,9 @@
 // callers catch and fall back to sample data, so the app works signed-out
 // of the network entirely (the Milestone 1 experience is the fallback).
 
+import { supabase } from "./supabase";
 import type {
+  Activity,
   AdvisorProfile,
   DailySummary,
   DayPlan,
@@ -23,15 +25,30 @@ export class ApiError extends Error {
   }
 }
 
+export function isSignedOut(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 401;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()), ...init?.headers },
   });
   if (!res.ok) {
     let detail = res.statusText;
     try {
-      detail = (await res.json()).detail ?? detail;
+      const body = await res.json();
+      detail = typeof body.detail === "string" ? body.detail : detail;
     } catch {}
     throw new ApiError(res.status, detail);
   }
@@ -75,6 +92,46 @@ export function interpretProfile(
   return req("/interpret-profile", { method: "POST", body: JSON.stringify({ text }) });
 }
 
+export interface Me {
+  email: string;
+  profile: AdvisorProfile;
+  thresholds: Thresholds;
+  homeLocation: Location;
+  units: "imperial" | "metric";
+  activated: boolean;
+  paused: boolean;
+}
+
+export function getMe(): Promise<Me> {
+  return req<Me>("/me");
+}
+
+export function patchSettings(fields: {
+  profile?: AdvisorProfile;
+  thresholds?: Thresholds;
+  homeLocation?: Location;
+  units?: string;
+  paused?: boolean;
+}): Promise<Omit<Me, "email">> {
+  return req("/me/settings", { method: "PATCH", body: JSON.stringify(fields) });
+}
+
+export function listActivities(): Promise<Activity[]> {
+  return req<{ activities: Activity[] }>("/activities").then((r) => r.activities);
+}
+
+export function createActivity(a: Omit<Activity, "id">): Promise<Activity> {
+  return req("/activities", { method: "POST", body: JSON.stringify(a) });
+}
+
+export function updateActivity(id: string, patch: Partial<Activity>): Promise<Activity> {
+  return req(`/activities/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+}
+
+export function deleteActivity(id: string): Promise<void> {
+  return req(`/activities/${id}`, { method: "DELETE" });
+}
+
 export function getTodayPlan(): Promise<DayPlan> {
   return req<DayPlan>("/plan/today");
 }
@@ -92,7 +149,7 @@ export async function acceptItem(
 ): Promise<{ item: PlanItem; blocked: string | null }> {
   const res = await fetch(`${API}/plan-items/${id}/accept`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({ window }),
   });
   const body = await res.json();
