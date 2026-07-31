@@ -60,7 +60,7 @@ function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: 
           <li key={s.title}>
             <Link
               href={s.href}
-              className="flex items-start gap-3 rounded-xl border border-hairline px-4 py-3 transition-colors hover:bg-white/5"
+              className="flex items-start gap-3 rounded-xl border border-hairline px-4 py-3 transition-colors hover:bg-ink/5"
             >
               <span
                 className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
@@ -224,7 +224,7 @@ export default function TodayPage() {
           {fmtWeekday(dateIso)}&apos;s outlook
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+              live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
             }`}
           >
             {live ? "Live" : "Sample"}
@@ -312,6 +312,46 @@ export default function TodayPage() {
         <SetupCard hasNotes={Boolean(me?.profile.notes)} onActivated={() => {}} />
       )}
 
+      {/* The agent, at a glance — always know what it's doing and what it
+          needs from you. Decisions come before dashboards. */}
+      {live && me && !needsSetup && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-hairline px-4 py-2.5 text-xs text-ink-2">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span
+              aria-hidden
+              className={`inline-block size-2 rounded-full ${me.paused ? "bg-band-1" : "bg-good"}`}
+            />
+            Advisor {me.paused ? "paused" : "active"}
+          </span>
+          <span className="text-ink-muted">Watching {me.homeLocation.name}</span>
+          {run ? (
+            <span className="text-accent">Planning now…</span>
+          ) : proposals.length > 0 ? (
+            <span className="font-medium text-accent">
+              {proposals.length} decision{proposals.length > 1 ? "s" : ""} waiting on you ↓
+            </span>
+          ) : activePlan ? (
+            <span className="text-ink-muted">Nothing needs you — plan is set</span>
+          ) : (
+            <span className="text-ink-muted">No plan yet today</span>
+          )}
+          <Link href="/advisor" className="ml-auto font-medium text-accent hover:underline">
+            Ask the advisor →
+          </Link>
+        </div>
+      )}
+
+      {proposals.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold tracking-tight">
+            Waiting on you ({proposals.length})
+          </h2>
+          {proposals.map((item) => (
+            <PlanItemCard key={item.id} item={item} {...handlers} />
+          ))}
+        </section>
+      )}
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <ConditionTile label={live ? "UV index · now" : "UV index · sample"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} />
         <ConditionTile label="Feels like" value={String(now.apparentF)} unit="°F" band={heatBand(now.apparentF)} />
@@ -327,17 +367,6 @@ export default function TodayPage() {
       <Card title="Your day against the sky" action={<BandLegend />}>
         <DayTimeline hours={hourly} activities={schedule} nowTime={nowTime} />
       </Card>
-
-      {proposals.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">
-            Waiting on you ({proposals.length})
-          </h2>
-          {proposals.map((item) => (
-            <PlanItemCard key={item.id} item={item} {...handlers} />
-          ))}
-        </section>
-      )}
 
       {onPlanItems.length > 0 && (
         <section className="flex flex-col gap-3">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui";
 import { BRIEFINGS } from "@/lib/mock";
 import { fmtDate } from "@/lib/format";
+import { useMe } from "@/lib/use-me";
 import type { Briefing } from "@/lib/types";
 
 function cadenceLabel(b: Briefing): string {
@@ -39,6 +40,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 }
 
 export default function BriefingsPage() {
+  const { me } = useMe();
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(BRIEFINGS.map((b) => [b.id, b.enabled]))
   );
@@ -47,13 +49,25 @@ export default function BriefingsPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Briefings</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-semibold tracking-tight">Briefings</h1>
+            <span className="rounded-full bg-ink/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
+              {me ? "Preview — coming soon" : "Sample"}
+            </span>
+          </div>
           <p className="mt-1 max-w-2xl text-sm text-ink-2">
             Standing instructions the advisor runs on its own — every morning,
             every week, or the moment a signal crosses a line you set.
+            {me && " These examples show what's coming with the always-on milestone; your own briefings aren't live yet."}
           </p>
         </div>
-        <button className="btn-primary px-4 py-2 text-sm">New briefing</button>
+        <button
+          disabled={Boolean(me)}
+          title={me ? "Arrives with the always-on milestone" : undefined}
+          className="btn-primary px-4 py-2 text-sm disabled:opacity-45"
+        >
+          New briefing
+        </button>
       </header>
 
       <div className="flex flex-col gap-4">
@@ -62,7 +76,7 @@ export default function BriefingsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <h2 className="text-[15px] font-semibold tracking-tight">{b.title}</h2>
-                <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-ink-2">
+                <span className="rounded-full bg-ink/10 px-2.5 py-0.5 text-[11px] font-medium text-ink-2">
                   {cadenceLabel(b)}
                 </span>
                 {b.trigger && (

@@ -116,8 +116,23 @@ export function PlanItemCard({
 
       <p className="mt-2 text-sm leading-relaxed text-ink-2">{item.rationale}</p>
 
-      <div className="mt-3">
-        <CheckList checks={item.checks} />
+      {/* Flags first; clear checks fold away. The full receipt is one click,
+          never gone — but it doesn't shout when everything passed. */}
+      <div className="mt-3 flex flex-col gap-2">
+        <CheckList checks={item.checks.filter((c) => !c.pass)} />
+        {item.checks.some((c) => c.pass) && (
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-ink-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+              <span aria-hidden className="inline-block size-2 rounded-full bg-good" />
+              {item.checks.filter((c) => c.pass).length} check
+              {item.checks.filter((c) => c.pass).length > 1 ? "s" : ""} clear
+              <span aria-hidden className="text-[10px] transition-transform group-open:rotate-90">▸</span>
+            </summary>
+            <div className="mt-2">
+              <CheckList checks={item.checks.filter((c) => c.pass)} />
+            </div>
+          </details>
+        )}
       </div>
 
       {blockedMsg && (

@@ -137,8 +137,8 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                 active
-                  ? "bg-white/10 font-medium text-ink"
-                  : "text-ink-2 hover:bg-white/5 hover:text-ink"
+                  ? "bg-ink/10 font-medium text-ink"
+                  : "text-ink-2 hover:bg-ink/5 hover:text-ink"
               }`}
             >
               <span className={active ? "text-accent" : "text-ink-muted"}>
@@ -208,7 +208,7 @@ export function MobileNav() {
             key={item.href}
             href={item.href}
             className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm ${
-              active ? "bg-white/10 font-medium text-ink" : "text-ink-2"
+              active ? "bg-ink/10 font-medium text-ink" : "text-ink-2"
             }`}
           >
             {item.label}

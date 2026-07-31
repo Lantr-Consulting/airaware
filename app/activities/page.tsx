@@ -120,7 +120,7 @@ export default function ActivitiesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">Activities</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+                live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
               {live ? "Live" : "Sample"}
@@ -231,7 +231,7 @@ export default function ActivitiesPage() {
                   }
                   className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                     form.daysOfWeek.includes(i)
-                      ? "bg-accent text-[#04121c]"
+                      ? "bg-accent text-accent-contrast"
                       : "border border-hairline text-ink-2 hover:text-ink"
                   }`}
                 >
@@ -262,7 +262,7 @@ export default function ActivitiesPage() {
                   {fmtDays(a.daysOfWeek)} · {fmtTime(a.startTime)} · {a.durationMin} min
                 </div>
               </div>
-              <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-ink-2">
+              <span className="rounded-full bg-ink/10 px-2.5 py-0.5 text-[11px] font-medium text-ink-2">
                 {KIND_LABEL[a.kind]}
               </span>
             </div>

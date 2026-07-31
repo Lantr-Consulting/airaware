@@ -42,7 +42,7 @@ function Bubble({ msg }: { msg: Message }) {
   return (
     <div
       className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-        mine ? "self-end bg-accent text-[#04121c]" : "self-start bg-surface text-ink-2"
+        mine ? "self-end bg-accent text-accent-contrast" : "self-start bg-surface text-ink-2"
       }`}
       style={{ animation: "msg-in 0.15s ease" }}
     >
@@ -123,8 +123,8 @@ export default function AdvisorPage() {
     if (id === null) setDbMsgs([]);
   }
 
-  async function send() {
-    const text = draft.trim();
+  async function send(preset?: string) {
+    const text = (preset ?? draft).trim();
     if (!text || thinking) return;
     const tid = live ? (activeId ?? "new") : mockThreadId;
     const mine: Message = { id: `x${extra.length}-u`, threadId: tid, role: "user", content: text, createdAt: "" };
@@ -181,7 +181,7 @@ export default function AdvisorPage() {
             <h1 className="text-2xl font-semibold tracking-tight">Advisor</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+                live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
               {live ? "Live" : "Sample"}
@@ -209,6 +209,23 @@ export default function AdvisorPage() {
           )}
         </div>
 
+        {live && messages.length <= 1 && !thinking && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {[
+              "What's my best outdoor window today?",
+              "Do I need sunscreen right now?",
+              "How's the air for a hard run?",
+            ].map((q) => (
+              <button
+                key={q}
+                onClick={() => send(q)}
+                className="btn-ghost px-3.5 py-1.5 text-xs"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="mt-2 flex items-center gap-2">
           <input
             value={draft}
@@ -217,7 +234,7 @@ export default function AdvisorPage() {
             placeholder="Can I run at lunch? What about the hike Saturday?"
             className="flex-1 rounded-full border border-hairline bg-surface px-4 py-2.5 text-sm placeholder:text-ink-muted"
           />
-          <button onClick={send} disabled={thinking} className="btn-primary px-5 py-2.5 text-sm">
+          <button onClick={() => send()} disabled={thinking} className="btn-primary px-5 py-2.5 text-sm">
             Send
           </button>
         </div>
@@ -245,8 +262,8 @@ export default function AdvisorPage() {
                       onClick={() => openThread(t.id)}
                       className={`w-full truncate rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                         t.id === activeId
-                          ? "bg-white/10 font-medium text-ink"
-                          : "text-ink-2 hover:bg-white/5"
+                          ? "bg-ink/10 font-medium text-ink"
+                          : "text-ink-2 hover:bg-ink/5"
                       }`}
                     >
                       {t.title}
@@ -296,8 +313,8 @@ export default function AdvisorPage() {
                       onClick={() => setMockThreadId(t.id)}
                       className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                         t.id === mockThreadId
-                          ? "bg-white/10 font-medium text-ink"
-                          : "text-ink-2 hover:bg-white/5"
+                          ? "bg-ink/10 font-medium text-ink"
+                          : "text-ink-2 hover:bg-ink/5"
                       }`}
                     >
                       {t.title}

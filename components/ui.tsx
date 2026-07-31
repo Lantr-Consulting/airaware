@@ -83,8 +83,8 @@ export function ConditionTile({
 const STATUS_STYLES: Record<PlanItemStatus, { label: string; cls: string }> = {
   proposed: { label: "Awaiting your call", cls: "bg-accent/15 text-accent" },
   accepted: { label: "Accepted", cls: "bg-good/10 text-good" },
-  declined: { label: "Declined", cls: "bg-white/10 text-ink-2" },
-  auto: { label: "On the plan", cls: "bg-white/10 text-ink-2" },
+  declined: { label: "Declined", cls: "bg-ink/10 text-ink-2" },
+  auto: { label: "On the plan", cls: "bg-ink/10 text-ink-2" },
 };
 
 export function StatusBadge({ status }: { status: PlanItemStatus }) {

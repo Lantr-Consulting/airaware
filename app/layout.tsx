@@ -30,8 +30,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Stamp the saved theme before first paint — no flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              `try{var t=localStorage.getItem("aa-theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="flex h-screen overflow-hidden">
         <ToastProvider>
           <Sidebar />

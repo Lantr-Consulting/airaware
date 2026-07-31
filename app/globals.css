@@ -14,6 +14,7 @@
   --hairline: rgba(255, 255, 255, 0.08);
 
   --accent: #4cc3ff; /* clear-sky CTA */
+  --accent-contrast: #04121c; /* text on accent surfaces */
 
   /* Band severity scale, 0 (best) → 4 (worst). Shared by every signal. */
   --band-0: #2ad46a;
@@ -26,6 +27,42 @@
   --critical: #ff5a48;
 }
 
+/* Light mode — toggled via data-theme on <html>, persisted per device.
+   Band hues keep their identity but darken enough to read on white. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #f6f8fa;
+  --surface: #ffffff;
+  --surface-2: #edf1f4;
+  --ink: #10181f;
+  --ink-2: #44515b;
+  --ink-muted: #77848e;
+  --grid: #e4e9ed;
+  --hairline: rgba(16, 24, 32, 0.1);
+
+  --accent: #0b87d0;
+  --accent-contrast: #ffffff;
+
+  --band-0: #109c4b;
+  --band-1: #bd8900;
+  --band-2: #dd7108;
+  --band-3: #dd3d31;
+  --band-4: #9a3ecb;
+
+  --good: #109c4b;
+  --critical: #dd3d31;
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 480px at 72% -12%, rgba(11, 135, 208, 0.06), transparent 60%),
+    var(--page);
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c8d0d7;
+}
+
 @theme inline {
   --color-page: var(--page);
   --color-surface: var(--surface);
@@ -36,6 +73,7 @@
   --color-grid: var(--grid);
   --color-hairline: var(--hairline);
   --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
   --color-band-0: var(--band-0);
   --color-band-1: var(--band-1);
   --color-band-2: var(--band-2);
@@ -64,7 +102,7 @@ body {
   justify-content: center;
   border-radius: 9999px;
   background: var(--accent);
-  color: #04121c;
+  color: var(--accent-contrast);
   font-weight: 600;
   transition: filter 0.15s ease, transform 0.05s ease;
 }
@@ -82,7 +120,10 @@ body {
   font-weight: 500;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.btn-ghost:hover { background: rgba(255, 255, 255, 0.06); color: var(--ink); }
+.btn-ghost:hover {
+  background: color-mix(in oklab, var(--ink) 7%, transparent);
+  color: var(--ink);
+}
 
 button:focus-visible,
 a:focus-visible,

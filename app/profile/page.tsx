@@ -111,7 +111,7 @@ function HomeEditor({
                       setChosen(r);
                       setZip(r.zip ?? "");
                     }}
-                    className="w-full px-3.5 py-2.5 text-left text-sm text-ink-2 hover:bg-white/5 hover:text-ink"
+                    className="w-full px-3.5 py-2.5 text-left text-sm text-ink-2 hover:bg-ink/5 hover:text-ink"
                   >
                     {r.name}
                     <span className="ml-2 text-xs text-ink-muted">{r.tz}</span>
@@ -260,7 +260,7 @@ export default function ProfilePage() {
             <h1 className="text-2xl font-semibold tracking-tight">Profile & settings</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+                live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
               {live ? "Live" : "Sample"}
@@ -286,7 +286,7 @@ export default function ProfilePage() {
             <>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
-                  paused ? "bg-white/10 text-ink-2" : "bg-good/10 text-good"
+                  paused ? "bg-ink/10 text-ink-2" : "bg-good/10 text-good"
                 }`}
               >
                 <span aria-hidden className="inline-block size-2 rounded-full bg-current" />

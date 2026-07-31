@@ -31,7 +31,7 @@ function Chip({ label, value, band }: { label: string; value: string; band: Band
 const PLAN_STATUS: Record<string, { label: string; cls: string }> = {
   active: { label: "Plan active", cls: "bg-good/10 text-good" },
   draft: { label: "Draft plan", cls: "bg-accent/15 text-accent" },
-  superseded: { label: "Superseded", cls: "bg-white/10 text-ink-2" },
+  superseded: { label: "Superseded", cls: "bg-ink/10 text-ink-2" },
 };
 
 export default function PlannerPage() {
@@ -72,7 +72,7 @@ export default function PlannerPage() {
           <h1 className="text-2xl font-semibold tracking-tight">The week ahead</h1>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+              live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
             }`}
           >
             {live ? "Live" : "Sample"}

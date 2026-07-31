@@ -3,6 +3,7 @@
 import { HOME, TODAY } from "@/lib/mock";
 import { fmtDate } from "@/lib/format";
 import { useMe } from "@/lib/use-me";
+import { ThemeToggle } from "./theme-toggle";
 
 export function TopBar() {
   const { me, loading } = useMe();
@@ -31,15 +32,18 @@ export function TopBar() {
         <span className="font-medium text-ink">{loading ? "…" : name}</span>
         <span className="text-ink-muted">· {dateStr}</span>
       </div>
-      <span
-        className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-          live
-            ? "bg-good/10 text-good"
-            : "border border-hairline text-ink-muted"
-        }`}
-      >
-        {live ? "Live" : "Sample data"}
-      </span>
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+            live
+              ? "bg-good/10 text-good"
+              : "border border-hairline text-ink-muted"
+          }`}
+        >
+          {live ? "Live" : "Sample data"}
+        </span>
+        <ThemeToggle />
+      </div>
     </header>
   );
 }

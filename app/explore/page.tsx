@@ -172,7 +172,7 @@ export default function ExplorePage() {
                   </h2>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                      c.live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+                      c.live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
                     }`}
                   >
                     {c.live ? "Live" : "Sample"}
