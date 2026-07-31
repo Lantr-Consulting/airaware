@@ -1,36 +1,146 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, ConditionTile } from "@/components/ui";
 import { aqiBand, heatBand, pollenBand, uvBand } from "@/lib/bands";
+import { getConditions, searchCities } from "@/lib/api";
 import { EXPLORE_CITIES } from "@/lib/mock";
+import type { DailySummary, Location } from "@/lib/types";
 
 const CELL_BG = ["bg-band-0", "bg-band-1", "bg-band-2", "bg-band-3", "bg-band-4"];
 
+interface CityCard {
+  location: Location;
+  current: { uvIndex: number; usAqi: number; apparentF: number; pollenIdx: number | null };
+  daily: DailySummary[];
+  live: boolean;
+}
+
+const SAMPLE_CARDS: CityCard[] = EXPLORE_CITIES.map((c) => ({ ...c, live: false }));
+
 export default function ExplorePage() {
   const [query, setQuery] = useState("");
-  const cities = EXPLORE_CITIES.filter((c) =>
+  const [cards, setCards] = useState<CityCard[]>(SAMPLE_CARDS);
+  const [offline, setOffline] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Upgrade the featured cities from sample to live on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.allSettled(
+        EXPLORE_CITIES.map((c) =>
+          getConditions({
+            lat: c.location.lat,
+            lon: c.location.lon,
+            zip: c.location.zip,
+            name: c.location.name,
+          })
+        )
+      );
+      if (cancelled) return;
+      if (results.every((r) => r.status === "rejected")) {
+        setOffline(true);
+        return;
+      }
+      setCards((prev) =>
+        prev.map((card, i) => {
+          const r = results[i];
+          if (r.status !== "fulfilled") return card;
+          const d = r.value;
+          return {
+            location: { ...card.location, ...d.location },
+            current: {
+              uvIndex: d.current.uvIndex,
+              usAqi: d.current.usAqi,
+              apparentF: d.current.apparentF,
+              pollenIdx: d.current.pollen?.index ?? null,
+            },
+            daily: d.daily,
+            live: true,
+          };
+        })
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function runSearch() {
+    const q = query.trim();
+    if (q.length < 2 || offline || searching) return;
+    setSearching(true);
+    setNotice(null);
+    try {
+      const hits = await searchCities(q);
+      if (hits.length === 0) {
+        setNotice(`No city found for “${q}”.`);
+        return;
+      }
+      const top = hits[0];
+      const d = await getConditions({ lat: top.lat, lon: top.lon, name: top.name });
+      const card: CityCard = {
+        location: top,
+        current: {
+          uvIndex: d.current.uvIndex,
+          usAqi: d.current.usAqi,
+          apparentF: d.current.apparentF,
+          pollenIdx: d.current.pollen?.index ?? null,
+        },
+        daily: d.daily,
+        live: true,
+      };
+      setCards((prev) => [card, ...prev.filter((c) => c.location.name !== top.name)]);
+      setQuery("");
+    } catch {
+      setNotice("Search is unavailable right now — showing sample cities.");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  const visible = cards.filter((c) =>
     c.location.name.toLowerCase().includes(query.toLowerCase())
   );
+  const shown = visible.length > 0 ? visible : cards;
 
   return (
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Explore</h1>
         <p className="mt-1 text-sm text-ink-2">
-          Conditions anywhere — no account needed. Search a city to see its UV,
-          heat, air, and pollen picture.
+          Conditions anywhere — no account needed. Search any city on Earth for
+          its UV, heat, air, and pollen picture.
         </p>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search a city…"
-          className="mt-4 w-full max-w-md rounded-full border border-hairline bg-surface px-4 py-2.5 text-sm placeholder:text-ink-muted"
-        />
+        <div className="mt-4 flex max-w-md items-center gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && runSearch()}
+            placeholder={offline ? "Backend offline — filtering samples…" : "Search any city…"}
+            className="flex-1 rounded-full border border-hairline bg-surface px-4 py-2.5 text-sm placeholder:text-ink-muted"
+          />
+          <button
+            onClick={runSearch}
+            disabled={offline || searching}
+            className="btn-primary px-4 py-2.5 text-sm"
+          >
+            {searching ? "…" : "Search"}
+          </button>
+        </div>
+        {notice && <p className="mt-2 text-xs text-ink-muted">{notice}</p>}
+        {offline && (
+          <p className="mt-2 text-xs text-ink-muted">
+            The conditions backend isn&apos;t reachable — these cards are sample
+            data until it comes back.
+          </p>
+        )}
       </header>
 
       <div className="flex flex-col gap-4">
-        {cities.map((c) => {
+        {shown.map((c) => {
           const worstByDay = c.daily.map((day) =>
             Math.max(
               uvBand(day.uvMax).severity,
@@ -42,9 +152,18 @@ export default function ExplorePage() {
           return (
             <Card key={c.location.name}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-[15px] font-semibold tracking-tight">
-                  {c.location.name}
-                </h2>
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-[15px] font-semibold tracking-tight">
+                    {c.location.name}
+                  </h2>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      c.live ? "bg-good/10 text-good" : "bg-white/10 text-ink-muted"
+                    }`}
+                  >
+                    {c.live ? "Live" : "Sample"}
+                  </span>
+                </div>
                 <div className="flex items-center gap-1.5">
                   <span className="mr-1 text-[11px] text-ink-muted">Next 7 days</span>
                   {worstByDay.map((sev, i) => (
@@ -70,14 +189,6 @@ export default function ExplorePage() {
             </Card>
           );
         })}
-        {cities.length === 0 && (
-          <Card>
-            <p className="text-sm text-ink-2">
-              No matches in the sample set. Live city search arrives with the
-              backend in Milestone 3.
-            </p>
-          </Card>
-        )}
       </div>
 
       <Card title="What the bands mean">

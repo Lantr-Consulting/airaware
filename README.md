@@ -13,14 +13,17 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 2 — Design pass
+## Status: Milestone 3 — The Brain
 
-All seven screens live on Vercel against typed mock data shaped like the
-real records (`lib/types.ts`, `lib/mock.ts`) — one coherent Austin week,
-hand-checked against the official band scales in `lib/bands.ts`. The design
-pass added the feels-like hero curve and now-marker to the timeline, the
-wordmark favicon, and a browser-verified polish round. The full design and
-build plan is in [DESIGN.md](DESIGN.md).
+The Python backend is live on Railway and the app now touches the real sky:
+**Explore searches any city on Earth** (Open-Meteo forecast + air quality +
+geocoding, no key), pollen via regional adapters (CAMS in Europe, Pollen.com
+by US ZIP, honest "no coverage" elsewhere), the **Advisor chats grounded in
+live conditions** (DeepSeek), and **Interpret** turns a plain-English
+description into the sensitivity profile and threshold table. Every call
+degrades gracefully to the sample data when the backend is unreachable.
+Today/Planner stay on the mock week until the exposure engine lands in
+Milestone 4. The full design and build plan is in [DESIGN.md](DESIGN.md).
 
 - **Today** — day score, condition tiles in official band colors, hourly timeline, proposal cards
 - **Planner** — the week: activities × forecast bands, re-plan badges
@@ -36,8 +39,8 @@ build plan is in [DESIGN.md](DESIGN.md).
 |---|---|
 | 0. Design | This document set: scope, control model, data sources, plan ✅ |
 | 1. First Ship | Frontend on Vercel, all seven screens on typed mock data ✅ |
-| 2. Design pass | Band-color token system, hourly timeline, visual polish ✅ *(this one)* |
-| 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data |
+| 2. Design pass | Band-color token system, hourly timeline, visual polish ✅ |
+| 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data ✅ *(this one)* |
 | 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline |
 | 5. Memory & accounts | Supabase database, sign-in, one advisor per user |
 | 6. Make it feel real | Onboarding/Activate, decline-reason lessons, good windows, US pollen adapter |
@@ -59,4 +62,14 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:3000.
+Then open http://localhost:3000. For the backend (optional — the frontend
+falls back to sample data without it):
+
+```bash
+cd backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+echo "DEEPSEEK_API_KEY=sk-..." > .env   # any OpenAI-compatible key works
+.venv/bin/uvicorn main:app --port 8010
+```
+
+Backend in production: https://airaware-backend-production.up.railway.app

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Card } from "@/components/ui";
-import { MESSAGES, PLAN_RUNS, THREADS } from "@/lib/mock";
+import { chat } from "@/lib/api";
+import { ADVISOR, HOME, MESSAGES, PLAN_RUNS, THREADS } from "@/lib/mock";
 import type { Message } from "@/lib/types";
 
 // Minimal bold-only rendering for mock messages; real markdown arrives with
@@ -54,28 +55,44 @@ export default function AdvisorPage() {
   const [threadId, setThreadId] = useState(THREADS[0].id);
   const [extra, setExtra] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
+  const [thinking, setThinking] = useState(false);
 
   const messages = [
     ...MESSAGES.filter((m) => m.threadId === threadId),
     ...extra.filter((m) => m.threadId === threadId),
   ];
 
-  function send() {
+  async function send() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || thinking) return;
+    const mine: Message = {
+      id: `x${extra.length}-u`,
+      threadId,
+      role: "user",
+      content: text,
+      createdAt: "",
+    };
+    setExtra((xs) => [...xs, mine]);
+    setDraft("");
+    setThinking(true);
+    let reply: string;
+    try {
+      reply = await chat({
+        message: text,
+        history: [...messages, mine].map((m) => ({ role: m.role, content: m.content })),
+        location: { name: HOME.name, lat: HOME.lat, lon: HOME.lon, zip: HOME.zip },
+        profile: ADVISOR.profile,
+        thresholds: ADVISOR.thresholds,
+      });
+    } catch {
+      reply =
+        "I can't reach the advisor backend right now, so I won't guess at live conditions. Try again in a moment — or check Explore once the connection is back.";
+    }
     setExtra((xs) => [
       ...xs,
-      { id: `x${xs.length}`, threadId, role: "user", content: text, createdAt: "" },
-      {
-        id: `x${xs.length + 1}`,
-        threadId,
-        role: "assistant",
-        content:
-          "The live advisor arrives in **Milestone 3** — for now I'm sample data. Once the backend ships, replies here are grounded in real conditions and your own plan records.",
-        createdAt: "",
-      },
+      { id: `x${xs.length}-a`, threadId, role: "assistant", content: reply, createdAt: "" },
     ]);
-    setDraft("");
+    setThinking(false);
   }
 
   return (
@@ -94,6 +111,11 @@ export default function AdvisorPage() {
           {messages.map((m) => (
             <Bubble key={m.id} msg={m} />
           ))}
+          {thinking && (
+            <div className="self-start rounded-2xl bg-surface px-4 py-3 text-sm text-ink-muted">
+              Checking the sky…
+            </div>
+          )}
         </div>
 
         <div className="mt-2 flex items-center gap-2">

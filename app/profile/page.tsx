@@ -2,24 +2,55 @@
 
 import { useState } from "react";
 import { Card } from "@/components/ui";
+import { interpretProfile } from "@/lib/api";
 import { ADVISOR } from "@/lib/mock";
+import type { AdvisorProfile, Thresholds } from "@/lib/types";
 
 const SKIN_TYPES = ["", "I", "II", "III", "IV", "V", "VI"];
 const POLLEN_BANDS = ["Low", "Low–medium", "Medium", "Medium–high", "High"];
 
 export default function ProfilePage() {
-  const a = ADVISOR;
-  const [paused, setPaused] = useState(a.paused);
-  const [about, setAbout] = useState(a.profile.notes);
+  const [paused, setPaused] = useState(ADVISOR.paused);
+  const [about, setAbout] = useState(ADVISOR.profile.notes);
+  const [profile, setProfile] = useState<AdvisorProfile>(ADVISOR.profile);
+  const [thresholds, setThresholds] = useState<Thresholds>(ADVISOR.thresholds);
+  const [interpreting, setInterpreting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const a = { ...ADVISOR, profile, thresholds };
+
+  async function interpret() {
+    const text = about.trim();
+    if (!text || interpreting) return;
+    setInterpreting(true);
+    setNotice(null);
+    try {
+      const result = await interpretProfile(text);
+      setProfile({ ...result.profile, notes: result.profile.notes || text });
+      setThresholds(result.thresholds);
+      setNotice(
+        "Interpreted — the sensitivities and limits below now reflect your description. (Saving and the explicit Activate step arrive with accounts in Milestone 5.)"
+      );
+    } catch {
+      setNotice("The interpreter backend isn't reachable right now — nothing was changed.");
+    } finally {
+      setInterpreting(false);
+    }
+  }
 
   const thresholdRows = [
     { line: `Sun protection from UV ${a.thresholds.uvProtect}`, why: `Skin type ${SKIN_TYPES[a.profile.skinType]}` },
     { line: `Move midday exposure at UV ${a.thresholds.uvAvoid}+`, why: "WHO very-high band" },
-    { line: `Flag hard efforts from AQI ${a.thresholds.aqiCaution}`, why: "Pollen allergies" },
+    { line: `Flag hard efforts from AQI ${a.thresholds.aqiCaution}`, why: a.profile.asthma ? "Asthma" : "Pollen allergies" },
     { line: `Move outdoor plans indoors at AQI ${a.thresholds.aqiAvoid}+`, why: "EPA unhealthy-for-sensitive-groups" },
     { line: `Caution from a feels-like of ${a.thresholds.heatCautionF}°F`, why: `Heat tolerance: ${a.profile.heatTolerance}` },
     { line: `Reschedule at a feels-like of ${a.thresholds.heatAvoidF}°F+`, why: "NWS danger band" },
-    { line: `Pollen advice from ${POLLEN_BANDS[a.thresholds.pollenCaution]}`, why: `Allergies: ${a.profile.pollenAllergies.join(", ")}` },
+    {
+      line: `Pollen advice from ${POLLEN_BANDS[a.thresholds.pollenCaution]}`,
+      why: a.profile.pollenAllergies.length
+        ? `Allergies: ${a.profile.pollenAllergies.join(", ")}`
+        : "No pollen allergies",
+    },
   ];
 
   return (
@@ -56,10 +87,16 @@ export default function ProfilePage() {
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-ink-muted">
-            The interpreter arrives in Milestone 3 — it will turn this into a
-            proposed profile you review and activate.
+            {notice ??
+              "Describe yourself — allergies, skin, heat, kids, routines — and the advisor turns it into the limits below."}
           </p>
-          <button className="btn-primary px-4 py-1.5 text-sm">Interpret</button>
+          <button
+            onClick={interpret}
+            disabled={interpreting}
+            className="btn-primary px-4 py-1.5 text-sm"
+          >
+            {interpreting ? "Interpreting…" : "Interpret"}
+          </button>
         </div>
       </Card>
 
