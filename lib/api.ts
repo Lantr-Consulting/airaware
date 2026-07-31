@@ -5,8 +5,10 @@
 import type {
   AdvisorProfile,
   DailySummary,
+  DayPlan,
   HourlyConditions,
   Location,
+  PlanItem,
   PollenReading,
   Thresholds,
 } from "./types";
@@ -71,6 +73,41 @@ export function interpretProfile(
   text: string
 ): Promise<{ profile: AdvisorProfile; thresholds: Thresholds }> {
   return req("/interpret-profile", { method: "POST", body: JSON.stringify({ text }) });
+}
+
+export function getTodayPlan(): Promise<DayPlan> {
+  return req<DayPlan>("/plan/today");
+}
+
+export function generatePlan(): Promise<DayPlan> {
+  return req<DayPlan>("/plan/generate", { method: "POST", body: JSON.stringify({}) });
+}
+
+// Accept re-checks on the server against the LATEST forecast; a 409 means
+// conditions moved and the window now crosses an avoid line — the error
+// carries the freshly annotated item.
+export async function acceptItem(
+  id: string,
+  window?: { start: string; end: string }
+): Promise<{ item: PlanItem; blocked: string | null }> {
+  const res = await fetch(`${API}/plan-items/${id}/accept`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ window }),
+  });
+  const body = await res.json();
+  if (res.status === 409 && body.detail?.item) {
+    return { item: body.detail.item as PlanItem, blocked: body.detail.message as string };
+  }
+  if (!res.ok) throw new ApiError(res.status, body.detail ?? res.statusText);
+  return { item: body as PlanItem, blocked: null };
+}
+
+export function declineItem(id: string, reason: string): Promise<PlanItem> {
+  return req<PlanItem>(`/plan-items/${id}/decline`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
 }
 
 export function chat(args: {

@@ -13,17 +13,20 @@ A Lantr sample project, built in the same order a student builds theirs.
 
 **Live:** https://airaware-omega.vercel.app
 
-## Status: Milestone 3 — The Brain
+## Status: Milestone 4 — Hands
 
-The Python backend is live on Railway and the app now touches the real sky:
-**Explore searches any city on Earth** (Open-Meteo forecast + air quality +
-geocoding, no key), pollen via regional adapters (CAMS in Europe, Pollen.com
-by US ZIP, honest "no coverage" elsewhere), the **Advisor chats grounded in
-live conditions** (DeepSeek), and **Interpret** turns a plain-English
-description into the sensitivity profile and threshold table. Every call
-degrades gracefully to the sample data when the backend is unreachable.
-Today/Planner stay on the mock week until the exposure engine lands in
-Milestone 4. The full design and build plan is in [DESIGN.md](DESIGN.md).
+The planner is real. `backend/exposure.py` is the deterministic exposure
+engine — NWS Rothfusz heat index, WHO/EPA/Pollen.com bands,
+intensity-scaled thresholds, all **unit-tested against published tables**
+(`pytest`). A LangChain agent builds the day plan holding the engine as a
+tool (`score_window`), and the server re-runs the same engine over every
+item it proposes — including the veto that strips a "great window" label
+the numbers don't support, which fired on our very first live run (pollen).
+**Today is live:** plan generation, hourly timeline from the real forecast,
+and accept/decline — accept re-checks against the *latest* forecast and
+refuses windows that now cross an avoid line. The advisor chats grounded in
+live conditions; Explore searches any city on Earth. Everything degrades to
+sample data offline. Full design in [DESIGN.md](DESIGN.md).
 
 - **Today** — day score, condition tiles in official band colors, hourly timeline, proposal cards
 - **Planner** — the week: activities × forecast bands, re-plan badges
@@ -40,8 +43,8 @@ Milestone 4. The full design and build plan is in [DESIGN.md](DESIGN.md).
 | 0. Design | This document set: scope, control model, data sources, plan ✅ |
 | 1. First Ship | Frontend on Vercel, all seven screens on typed mock data ✅ |
 | 2. Design pass | Band-color token system, hourly timeline, visual polish ✅ |
-| 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data ✅ *(this one)* |
-| 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline |
+| 3. The Brain | Python backend on Railway; profile interpreter + grounded chat; Explore goes live on real data ✅ |
+| 4. Hands | Exposure engine (pure code, cited thresholds) + LangChain planner; propose → accept/decline ✅ *(this one)* |
 | 5. Memory & accounts | Supabase database, sign-in, one advisor per user |
 | 6. Make it feel real | Onboarding/Activate, decline-reason lessons, good windows, US pollen adapter |
 | 7. Workspace | Async plan runs, threads, forecast-change supersession |

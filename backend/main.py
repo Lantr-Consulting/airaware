@@ -18,6 +18,8 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 import env as environment
+import exposure
+import store
 from bands import aqi_band, heat_band, uv_band
 
 load_dotenv()
@@ -67,6 +69,90 @@ def conditions_search(q: str = Query(..., min_length=2)):
         return {"results": environment.geocode(q)}
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"geocoding upstream: {e}")
+
+
+# ---------- Day plans (Milestone 4: one shared demo advisor, plans.json) ----------
+
+class GenerateRequest(BaseModel):
+    date: str | None = None
+
+
+class AcceptRequest(BaseModel):
+    window: dict | None = None  # optional edited {start, end}
+
+
+class DeclineRequest(BaseModel):
+    reason: str
+
+
+@app.get("/plan/today")
+def plan_today():
+    plan = store.get_plan(store.today_local())
+    if plan is None:
+        raise HTTPException(status_code=404, detail="no plan for today yet")
+    return plan
+
+
+@app.post("/plan/generate")
+def plan_generate(req: GenerateRequest):
+    if llm is None:
+        raise HTTPException(status_code=503, detail="LLM not configured")
+    date_iso = req.date or store.today_local()
+    if date_iso != store.today_local():
+        raise HTTPException(status_code=400, detail="Milestone 4 plans today only — multi-day arrives with async runs")
+    import agent  # heavy import; loaded on first use
+
+    try:
+        plan = agent.run_plan(date_iso)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"planner failed: {e}")
+    store.put_plan(plan)
+    return plan
+
+
+@app.post("/plan-items/{item_id}/accept")
+def accept_item(item_id: str, req: AcceptRequest):
+    """Accept re-measures against the LATEST forecast — never the one the
+    proposal was born under. If an avoid-line check fails now, we refuse."""
+    home = store.DEFAULT_ADVISOR["home"]
+    hourly = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))["hourly"]
+
+    result: dict = {}
+
+    def mutate(item, plan):
+        if req.window and "start" in req.window and "end" in req.window:
+            item["window"] = {"start": req.window["start"], "end": req.window["end"]}
+        activity = store.activity(item.get("activityId") or "")
+        exposure.annotate_item(item, hourly, activity, store.DEFAULT_ADVISOR["thresholds"], store.DEFAULT_ADVISOR["profile"])
+        blocked = any(
+            not c["pass"] and "avoid" in c.get("thresholdSource", "") for c in item.get("checks", [])
+        )
+        if blocked:
+            result["blocked"] = True
+        else:
+            item["status"] = "accepted"
+        result["item"] = item
+
+    if store.update_item(item_id, mutate) is None:
+        raise HTTPException(status_code=404, detail="plan item not found")
+    if result.get("blocked"):
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Conditions moved — this window now crosses an avoid line. Fresh checks attached.", "item": result["item"]},
+        )
+    return result["item"]
+
+
+@app.post("/plan-items/{item_id}/decline")
+def decline_item(item_id: str, req: DeclineRequest):
+    def mutate(item, plan):
+        item["status"] = "declined"
+        item["feedback"] = {"reason": req.reason.strip()[:300]}
+
+    item = store.update_item(item_id, mutate)
+    if item is None:
+        raise HTTPException(status_code=404, detail="plan item not found")
+    return item
 
 
 # ---------- LLM: profile interpreter ----------
