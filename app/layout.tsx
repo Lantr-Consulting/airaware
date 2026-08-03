@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { MobileNav, Sidebar } from "@/components/sidebar";
 import { ToastProvider } from "@/components/toast";
-import { TopBar } from "@/components/topbar";
-import { GuidanceBanner } from "@/components/ui";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,10 +13,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Serif display voice for the marketing landing (FORGE, matching lantr.site).
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
-  title: "AirAware — outdoor guidance",
+  title: "AirAware — your personal outdoor-health advisor",
   description:
-    "Your personal environmental-health planner: UV, heat, air quality, and pollen against your real week. A Lantr sample project.",
+    "An advisor that plans your week around UV, heat, air quality, and pollen — real forecasts, cited health bands, and a plan that adapts when conditions change. General guidance, not medical advice. A Lantr sample project.",
 };
 
 export default function RootLayout({
@@ -31,7 +36,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <head>
         {/* Stamp the saved theme before first paint — no flash. */}
@@ -42,18 +47,8 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="flex h-screen overflow-hidden">
-        <ToastProvider>
-          <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <TopBar />
-            <GuidanceBanner />
-            <MobileNav />
-            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-y-auto px-5 py-8">
-              {children}
-            </main>
-          </div>
-        </ToastProvider>
+      <body className="min-h-screen">
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

@@ -289,14 +289,14 @@ export default function AdvisorPage() {
                       ? livePlan.summary.slice(0, 160) + "…"
                       : livePlan.summary}
                   </p>
-                  <Link href="/" className="mt-3 block text-xs font-medium text-accent hover:underline">
+                  <Link href="/today" className="mt-3 block text-xs font-medium text-accent hover:underline">
                     Open today&apos;s plan →
                   </Link>
                 </>
               ) : (
                 <>
                   <p className="text-sm leading-relaxed text-ink-2">No plan for today yet.</p>
-                  <Link href="/" className="mt-2 block text-xs font-medium text-accent hover:underline">
+                  <Link href="/today" className="mt-2 block text-xs font-medium text-accent hover:underline">
                     Plan my day →
                   </Link>
                 </>

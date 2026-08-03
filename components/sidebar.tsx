@@ -24,7 +24,7 @@ function Icon({ children }: { children: ReactNode }) {
 
 const NAV = [
   {
-    href: "/",
+    href: "/today",
     label: "Today",
     icon: (
       <Icon>

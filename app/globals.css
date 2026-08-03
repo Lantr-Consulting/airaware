@@ -163,3 +163,198 @@ select:focus-visible {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+
+/* ============================================================
+   FORGE landing — the marketing page at "/", matching lantr.site.
+   Scoped under .forge so the product theme above is untouched.
+   ============================================================ */
+
+.forge {
+  color-scheme: light;
+  --lp-bg: #faf9f6;
+  --lp-bg2: #f2f0ea;
+  --lp-surface: #ffffff;
+  --lp-surface2: #f6f4ef;
+  --lp-line: #211f1a14;
+  --lp-line-strong: #211f1a2b;
+  --lp-fg: #1e1c17;
+  --lp-ink: #38352e;
+  --lp-muted: #6b6860;
+  --lp-faint: #9c988d;
+  --lp-accent: #3f7280;
+  --lp-accent-ink: #325964;
+  --lp-accent-wash: #e8f0f2;
+  --lp-amber: #c2841f;
+  --lp-gold: #c8a763;
+  --lp-rule: rgba(33, 31, 26, 0.09);
+  --lp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--lp-bg);
+  color: var(--lp-ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.forge ::selection {
+  background: color-mix(in oklab, var(--lp-accent) 22%, transparent);
+  color: var(--lp-fg);
+}
+
+.lp-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+}
+.lp-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.lp-card {
+  background-color: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  box-shadow: 0 1px 2px rgba(30, 28, 23, 0.04);
+}
+.lp-lift {
+  transition:
+    transform 0.45s var(--lp-ease),
+    box-shadow 0.45s var(--lp-ease);
+}
+.lp-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 1px 2px rgba(30, 28, 23, 0.04),
+    0 22px 50px -24px rgba(30, 28, 23, 0.2);
+}
+
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--lp-accent);
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(30, 28, 23, 0.25);
+  transition: all 0.2s var(--lp-ease);
+}
+.lp-btn:hover {
+  background: var(--lp-accent-ink);
+  transform: translateY(-1px);
+}
+.lp-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line-strong);
+  color: var(--lp-fg);
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+.lp-btn-ghost:hover {
+  background: var(--lp-surface2);
+}
+
+/* diagonal hatch — drafting-grid margin bands */
+.lp-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(33, 31, 26, 0.1) 0,
+    rgba(33, 31, 26, 0.1) 1px,
+    transparent 1px,
+    transparent 9px
+  );
+}
+
+/* the single dark band — final CTA & footer */
+.lp-scene {
+  color-scheme: dark;
+  --lp-bg: #171511;
+  --lp-bg2: #1d1b16;
+  --lp-surface: #201e18;
+  --lp-surface2: #26231c;
+  --lp-line: #ffffff14;
+  --lp-line-strong: #ffffff2e;
+  --lp-fg: #f4f1ea;
+  --lp-ink: #d9d4c8;
+  --lp-muted: #a8a396;
+  --lp-faint: #7a756a;
+  --lp-accent: #6fa7b5;
+  --lp-accent-ink: #8fc3d1;
+  --lp-accent-wash: #263a40;
+  --lp-rule: rgba(255, 255, 255, 0.06);
+  background-color: var(--lp-bg);
+  color: var(--lp-ink);
+}
+.lp-scene .lp-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.08) 0,
+    rgba(255, 255, 255, 0.08) 1px,
+    transparent 1px,
+    transparent 9px
+  );
+}
+.lp-scene .lp-btn {
+  color: #10202a;
+}
+.lp-scene .lp-btn:hover {
+  background: var(--lp-accent-ink);
+}
+
+/* scroll-in reveal (IntersectionObserver adds .lp-in) */
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  filter: blur(5px);
+  transition:
+    opacity 0.85s var(--lp-ease),
+    transform 0.85s var(--lp-ease),
+    filter 0.85s var(--lp-ease);
+  transition-delay: var(--lp-d, 0ms);
+}
+.lp-reveal.lp-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* hero headline word cascade */
+@keyframes lp-word {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.lp-word {
+  display: inline-block;
+  opacity: 0;
+  will-change: transform;
+  animation: lp-word 0.7s var(--lp-ease) forwards;
+  animation-delay: var(--lp-d, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .lp-word {
+    opacity: 1;
+    animation: none;
+  }
+  .lp-lift,
+  .lp-lift:hover {
+    transform: none;
+    transition: none;
+  }
+}

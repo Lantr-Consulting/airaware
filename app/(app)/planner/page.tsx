@@ -122,7 +122,7 @@ export default function PlannerPage() {
                   ) : (
                     isToday &&
                     live && (
-                      <Link href="/" className="btn-ghost px-2.5 py-0.5 text-[11px]">
+                      <Link href="/today" className="btn-ghost px-2.5 py-0.5 text-[11px]">
                         Plan today
                       </Link>
                     )
@@ -156,7 +156,7 @@ export default function PlannerPage() {
                 </ul>
 
                 {proposals > 0 && (
-                  <Link href="/" className="mt-3 block text-xs font-medium text-accent hover:underline">
+                  <Link href="/today" className="mt-3 block text-xs font-medium text-accent hover:underline">
                     {proposals} proposal{proposals > 1 ? "s" : ""} waiting on you →
                   </Link>
                 )}

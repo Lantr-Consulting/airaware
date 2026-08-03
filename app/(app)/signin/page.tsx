@@ -32,7 +32,7 @@ export default function SignInPage() {
       setBusy(false);
       return;
     }
-    router.push("/");
+    router.push("/today");
   }
 
   return (
