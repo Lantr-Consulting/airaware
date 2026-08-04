@@ -8,6 +8,9 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   ColumnRules,
+  LangToggle,
+  persistLang,
+  readLang,
   Reveal,
   Words,
   type Lang,
@@ -391,15 +394,26 @@ function ProductFrame({ lang }: { lang: Lang }) {
 }
 
 export default function Landing() {
-  const lang: Lang = "zh";
+  const [lang, setLang] = useState<Lang>("zh");
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    document.documentElement.lang = "zh-CN";
+    const languageTimer = window.setTimeout(() => {
+      const savedLanguage = readLang();
+      setLang(savedLanguage);
+      document.documentElement.lang = savedLanguage === "zh" ? "zh-CN" : "en";
+    }, 0);
     supabase.auth.getSession().then(({ data }) => {
       setSignedIn(Boolean(data.session));
     });
+    return () => window.clearTimeout(languageTimer);
   }, []);
+
+  function switchLang(next: Lang) {
+    setLang(next);
+    persistLang(next);
+    document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
+  }
 
   const c = COPY[lang];
 
@@ -425,13 +439,14 @@ export default function Landing() {
               {c.nav.who}
             </a>
             <a
-              href="https://lantr.site"
+              href={lang === "en" ? "https://lantr.site/en" : "https://lantr.site"}
               className="transition-colors hover:text-[var(--lp-fg)]"
             >
               {c.hub} ↗
             </a>
           </nav>
           <div className="ml-auto flex items-center gap-2.5">
+            <LangToggle lang={lang} onChange={switchLang} />
             {signedIn ? (
               <Link href="/today" className="lp-btn h-9 px-4 text-[13px]">
                 {c.openDash}
@@ -688,8 +703,11 @@ export default function Landing() {
                 </div>
                 <ul className="mt-3 space-y-1.5 text-[13px] text-[var(--lp-muted)]">
                   <li>
-                    <a href="https://lantr.site" className="hover:text-[var(--lp-fg)]">
-                      lantr.site — 学生作品展
+                    <a
+                      href={lang === "en" ? "https://lantr.site/en" : "https://lantr.site"}
+                      className="hover:text-[var(--lp-fg)]"
+                    >
+                      lantr.site — {lang === "en" ? "student showcase" : "学生作品展"}
                     </a>
                   </li>
                   <li>

@@ -25,7 +25,7 @@ export function readLang(): Lang {
     if (s === "en" || s === "zh") return s;
     if (navigator.language?.toLowerCase().startsWith("zh")) return "zh";
   } catch {}
-  return "en";
+  return "zh";
 }
 
 export function persistLang(lang: Lang) {
@@ -48,7 +48,7 @@ export function LangToggle({
 }) {
   return (
     <div className="lp-mono inline-flex rounded-full border border-[var(--lp-line-strong)] bg-[var(--lp-surface)] p-0.5 text-[11px] font-medium">
-      {(["en", "zh"] as Lang[]).map((l) => (
+      {(["zh", "en"] as Lang[]).map((l) => (
         <button
           key={l}
           onClick={() => onChange(l)}
