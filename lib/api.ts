@@ -3,6 +3,7 @@
 // of the network entirely (the Milestone 1 experience is the fallback).
 
 import { supabase } from "./supabase";
+import { getLanguage } from "./language";
 import type {
   Activity,
   AdvisorProfile,
@@ -43,7 +44,12 @@ async function authHeaders(): Promise<Record<string, string>> {
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(await authHeaders()), ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      "Accept-Language": getLanguage() === "en" ? "en" : "zh-CN",
+      ...(await authHeaders()),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
     let detail = res.statusText;

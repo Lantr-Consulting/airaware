@@ -1,15 +1,19 @@
+"use client";
+
 import type { ReactNode } from "react";
 import type { PlanItemStatus, RuleCheck } from "@/lib/types";
 import { SEVERITY_TEXT } from "@/lib/bands";
 import type { BandInfo } from "@/lib/bands";
+import { pick, useLanguage } from "@/lib/language";
 
 export function GuidanceBanner() {
+  const language = useLanguage();
   return (
     <div className="flex items-center gap-2 border-b border-hairline bg-page px-5 py-1.5 text-[11px] text-ink-muted">
       <span aria-hidden className="inline-block size-2 rounded-full bg-accent" />
       <span>
-        <strong className="font-semibold text-ink">仅供日常参考，不替代医疗建议</strong>
-        {" "}· AirAware 根据 WHO、EPA 与 NWS 的公开标准整理可执行的日常建议。
+        <strong className="font-semibold text-ink">{pick(language, "仅供日常参考，不替代医疗建议", "Everyday guidance, not medical advice")}</strong>
+        {" "}· {pick(language, "AirAware 根据 WHO、EPA 与 NWS 的公开标准整理可执行的日常建议。", "AirAware turns public WHO, EPA, and NWS standards into practical daily guidance.")}
       </span>
     </div>
   );
@@ -55,6 +59,7 @@ export function ConditionTile({
   band?: BandInfo;
   noCoverage?: boolean;
 }) {
+  const language = useLanguage();
   return (
     <div className="rounded-2xl bg-surface p-4">
       <div className="text-xs text-ink-muted">{label}</div>
@@ -66,7 +71,7 @@ export function ConditionTile({
         {unit && <span className="ml-1 text-sm font-normal text-ink-2">{unit}</span>}
       </div>
       {noCoverage ? (
-        <div className="mt-0.5 text-xs text-ink-muted">该地区暂无数据</div>
+        <div className="mt-0.5 text-xs text-ink-muted">{pick(language, "该地区暂无数据", "No coverage in this area")}</div>
       ) : (
         band && (
           <div className={`mt-0.5 flex items-center gap-1.5 text-xs font-medium ${SEVERITY_TEXT[band.severity]}`}>
@@ -79,26 +84,28 @@ export function ConditionTile({
   );
 }
 
-const STATUS_STYLES: Record<PlanItemStatus, { label: string; cls: string }> = {
-  proposed: { label: "待你确认", cls: "bg-accent/15 text-accent" },
-  accepted: { label: "已接受", cls: "bg-good/10 text-good" },
-  declined: { label: "已拒绝", cls: "bg-ink/10 text-ink-2" },
-  auto: { label: "已纳入计划", cls: "bg-ink/10 text-ink-2" },
+const STATUS_STYLES: Record<PlanItemStatus, { zh: string; en: string; cls: string }> = {
+  proposed: { zh: "待你确认", en: "Your review", cls: "bg-accent/15 text-accent" },
+  accepted: { zh: "已接受", en: "Accepted", cls: "bg-good/10 text-good" },
+  declined: { zh: "已拒绝", en: "Declined", cls: "bg-ink/10 text-ink-2" },
+  auto: { zh: "已纳入计划", en: "In plan", cls: "bg-ink/10 text-ink-2" },
 };
 
 export function StatusBadge({ status }: { status: PlanItemStatus }) {
+  const language = useLanguage();
   const s = STATUS_STYLES[status];
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${s.cls}`}
     >
-      {s.label}
+      {s[language]}
     </span>
   );
 }
 
 // The exposure engine's verdict lines, rendered exactly as persisted.
 export function CheckList({ checks }: { checks: RuleCheck[] }) {
+  const language = useLanguage();
   if (checks.length === 0) return null;
   return (
     <ul className="grid gap-x-6 gap-y-1.5">
@@ -115,7 +122,7 @@ export function CheckList({ checks }: { checks: RuleCheck[] }) {
           <span>
             <span className="text-ink-2">{c.detail}</span>
             <span className="ml-1.5 text-xs text-ink-muted">({c.thresholdSource})</span>
-            <span className="sr-only">{c.pass ? "（通过）" : "（需注意）"}</span>
+            <span className="sr-only">{c.pass ? pick(language, "（通过）", "(passed)") : pick(language, "（需注意）", "(needs attention)")}</span>
           </span>
         </li>
       ))}

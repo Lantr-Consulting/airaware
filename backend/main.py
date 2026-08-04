@@ -14,7 +14,7 @@ import threading
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel
@@ -45,6 +45,16 @@ llm = (
     else None
 )
 MODEL = "deepseek-chat"
+
+
+def _request_language(request: Request) -> str:
+    return "en" if request.headers.get("accept-language", "").lower().startswith("en") else "zh"
+
+
+def _language_rule(language: str) -> str:
+    if language == "en":
+        return "Write every user-facing field in natural English and use Fahrenheit."
+    return "Write every user-facing field in natural Simplified Chinese and convert Fahrenheit to Celsius."
 
 
 @app.get("/health")
@@ -198,7 +208,11 @@ def plan_today(user: dict = Depends(auth.current_user)):
     return plan
 
 
-def _supersede_note(old_plan: dict | None, new_hourly: list[dict] | None) -> str | None:
+def _supersede_note(
+    old_plan: dict | None,
+    new_hourly: list[dict] | None,
+    language: str = "zh",
+) -> str | None:
     """Human sentence about WHY the re-plan differs — diffed from the old
     plan's conditions snapshot, never invented."""
     if old_plan is None:
@@ -206,7 +220,7 @@ def _supersede_note(old_plan: dict | None, new_hourly: list[dict] | None) -> str
     stamp = datetime.now(timezone.utc).strftime("%H:%M UTC")
     old_hourly = old_plan.get("conditions_snapshot") or []
     if not old_hourly or not new_hourly:
-        return f"已于 {stamp} 重新规划。"
+        return f"Replanned at {stamp}." if language == "en" else f"已于 {stamp} 重新规划。"
     deltas = []
     for label, key, unit, floor in (
         ("空气质量", "usAqi", " AQI", 15),
@@ -225,12 +239,23 @@ def _supersede_note(old_plan: dict | None, new_hourly: list[dict] | None) -> str
                 new_text = f"{new_max}{unit}"
             deltas.append((abs(new_max - old_max) / max(floor, 1), f"{label}{direction}（{old_text} → {new_text}）"))
     if not deltas:
-        return f"已于 {stamp} 重新规划，预报整体变化不大。"
+        return f"Replanned at {stamp}; the forecast changed only slightly." if language == "en" else f"已于 {stamp} 重新规划，预报整体变化不大。"
     deltas.sort(reverse=True)
-    return f"已于 {stamp} 重新规划：{deltas[0][1]}。"
+    return (
+        f"Replanned at {stamp} because the forecast changed."
+        if language == "en"
+        else f"已于 {stamp} 重新规划：{deltas[0][1]}。"
+    )
 
 
-def _plan_job(user_id: str, run_id: str, date_iso: str, advisor: dict, activities: list[dict]) -> None:
+def _plan_job(
+    user_id: str,
+    run_id: str,
+    date_iso: str,
+    advisor: dict,
+    activities: list[dict],
+    language: str = "zh",
+) -> None:
     """Runs on a background thread; state lives in the DB so either worker
     can answer the frontend's polling."""
     try:
@@ -238,9 +263,9 @@ def _plan_job(user_id: str, run_id: str, date_iso: str, advisor: dict, activitie
         steer = db.latest_run_steer(user_id)
         import agent
 
-        plan = agent.run_plan(date_iso, advisor, activities, lessons, steer)
+        plan = agent.run_plan(date_iso, advisor, activities, lessons, steer, language)
         old = db.supersede_plan(user_id, date_iso)
-        plan["supersededNote"] = _supersede_note(old, plan.get("conditionsSnapshot"))
+        plan["supersededNote"] = _supersede_note(old, plan.get("conditionsSnapshot"), language)
         db.put_plan(user_id, plan)
         db.update_run(run_id, {
             "status": "done",
@@ -258,7 +283,7 @@ def _plan_job(user_id: str, run_id: str, date_iso: str, advisor: dict, activitie
 
 
 @app.post("/plan/generate")
-def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user)):
+def plan_generate(req: GenerateRequest, request: Request, user: dict = Depends(auth.current_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="规划模型尚未配置")
     advisor, activities = _advisor_ctx(user)
@@ -275,7 +300,7 @@ def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user))
     run = db.create_run(user["id"], [date_iso])
     threading.Thread(
         target=_plan_job,
-        args=(user["id"], run["id"], date_iso, advisor, activities),
+        args=(user["id"], run["id"], date_iso, advisor, activities, _request_language(request)),
         daemon=True,
     ).start()
     return {"runId": run["id"], "status": "running"}
@@ -428,7 +453,7 @@ def briefings_delete(briefing_id: str, user: dict = Depends(auth.current_user)):
 
 
 @app.post("/briefings/{briefing_id}/run")
-def briefings_run(briefing_id: str, user: dict = Depends(auth.current_user)):
+def briefings_run(briefing_id: str, request: Request, user: dict = Depends(auth.current_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="简报模型尚未配置")
     row = db.get_briefing(user["id"], briefing_id)
@@ -437,7 +462,7 @@ def briefings_run(briefing_id: str, user: dict = Depends(auth.current_user)):
     advisor = _me(user)
     import briefing as briefing_engine
 
-    run = briefing_engine.run_briefing(user["id"], row, advisor)
+    run = briefing_engine.run_briefing(user["id"], row, advisor, _request_language(request))
     db.claim_briefing(briefing_id, datetime.now(timezone.utc).isoformat())
     return {"report": run["report"], "createdAt": run["created_at"]}
 
@@ -483,13 +508,13 @@ Rules:
 
 
 @app.post("/interpret-profile")
-def interpret_profile(req: InterpretRequest):
+def interpret_profile(req: InterpretRequest, request: Request):
     if llm is None:
         raise HTTPException(status_code=503, detail="解析模型尚未配置")
     resp = llm.chat.completions.create(
         model=MODEL,
         messages=[
-            {"role": "system", "content": INTERPRET_SYSTEM},
+            {"role": "system", "content": INTERPRET_SYSTEM + "\n" + _language_rule(_request_language(request))},
             {"role": "user", "content": req.text.strip()[:2000]},
         ],
         response_format={"type": "json_object"},
@@ -604,9 +629,11 @@ Hard rules:
 
 
 @app.post("/chat")
-def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
+def chat(req: ChatRequest, request: Request, user: dict | None = Depends(optional_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="问答模型尚未配置")
+
+    language = _request_language(request)
 
     # Signed in: the server's records are the truth — location, profile,
     # thresholds, and today's plan come from the user's own rows.
@@ -619,7 +646,9 @@ def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
         req.thresholds = advisor["thresholds"]
         thread_id = req.threadId
         if thread_id is None:
-            thread_id = db.create_thread(user["id"], req.message.strip()[:48] or "新对话")["id"]
+            thread_id = db.create_thread(
+                user["id"], req.message.strip()[:48] or ("New conversation" if language == "en" else "新对话")
+            )["id"]
             req.history = []
         else:
             req.history = [ChatMessage(**m) for m in (
@@ -673,7 +702,10 @@ def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
     if req.thresholds:
         context_parts.append("THRESHOLDS " + json.dumps(req.thresholds))
 
-    messages = [{"role": "system", "content": CHAT_SYSTEM + "\n\n" + "\n".join(context_parts)}]
+    messages = [{
+        "role": "system",
+        "content": CHAT_SYSTEM + "\n\n" + "\n".join(context_parts) + "\n\n" + _language_rule(language),
+    }]
     for m in req.history[-10:]:
         if m.role in ("user", "assistant") and m.content.strip():
             messages.append({"role": m.role, "content": m.content[:2000]})

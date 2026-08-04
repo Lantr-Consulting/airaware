@@ -42,12 +42,11 @@ thresholds when relevant. Markdown, under 200 words, numbers in **bold**,
 no greeting and no sign-off. General guidance, not medical advice — say so
 only if the instruction asks about health treatment.
 
-Always write in natural Simplified Chinese. Convert Fahrenheit values to
-Celsius in user-facing text, while preserving the source numbers internally.
+{language_rule}
 Keep the tone calm and practical, and never diagnose or recommend medication."""
 
 
-def write_report(user_id: str, advisor: dict, briefing: dict) -> str:
+def write_report(user_id: str, advisor: dict, briefing: dict, language: str = "zh") -> str:
     home = advisor["homeLocation"]
     cond = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))
     cur = cond["current"]
@@ -79,16 +78,22 @@ def write_report(user_id: str, advisor: dict, briefing: dict) -> str:
     resp = _client().chat.completions.create(
         model="deepseek-chat",
         messages=[
-            {"role": "system", "content": REPORT_SYSTEM + "\n\nCONTEXT " + json.dumps(context)},
-            {"role": "user", "content": "长期简报要求：" + briefing["prompt"][:800]},
+            {"role": "system", "content": REPORT_SYSTEM.format(
+                language_rule=(
+                    "Write in natural English and use Fahrenheit in user-facing text."
+                    if language == "en"
+                    else "Write in natural Simplified Chinese and convert Fahrenheit to Celsius in user-facing text."
+                )
+            ) + "\n\nCONTEXT " + json.dumps(context)},
+            {"role": "user", "content": ("Standing briefing instruction: " if language == "en" else "长期简报要求：") + briefing["prompt"][:800]},
         ],
         temperature=0.5,
     )
     return resp.choices[0].message.content
 
 
-def run_briefing(user_id: str, briefing: dict, advisor: dict) -> dict:
-    report = write_report(user_id, advisor, briefing)
+def run_briefing(user_id: str, briefing: dict, advisor: dict, language: str = "zh") -> dict:
+    report = write_report(user_id, advisor, briefing, language)
     return db.create_briefing_run(user_id, briefing["id"], report)
 
 

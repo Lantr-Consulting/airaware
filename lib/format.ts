@@ -9,21 +9,23 @@ export function fmtWindow(w: { start: string; end: string }): string {
 
 export function fmtDate(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
-  return d.toLocaleDateString("zh-CN", { weekday: "short", month: "long", day: "numeric" });
+  return d.toLocaleDateString(getLanguage() === "en" ? "en-US" : "zh-CN", { weekday: "short", month: "long", day: "numeric" });
 }
 
 export function fmtWeekday(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
-  return d.toLocaleDateString("zh-CN", { weekday: "long" });
+  return d.toLocaleDateString(getLanguage() === "en" ? "en-US" : "zh-CN", { weekday: "long" });
 }
 
 export const DOW_SHORT = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+const DOW_SHORT_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function fmtDays(days: number[]): string {
-  if (days.length === 7) return "每天";
+  const en = getLanguage() === "en";
+  if (days.length === 7) return en ? "Every day" : "每天";
   if ([1, 2, 3, 4, 5].every((d) => days.includes(d)) && days.length === 5)
-    return "工作日";
-  return days.map((d) => DOW_SHORT[d]).join(" · ");
+    return en ? "Weekdays" : "工作日";
+  return days.map((d) => (en ? DOW_SHORT_EN : DOW_SHORT)[d]).join(" · ");
 }
 
 export function fahrenheitToCelsius(value: number): number {
@@ -31,5 +33,6 @@ export function fahrenheitToCelsius(value: number): number {
 }
 
 export function fmtTempF(value: number): string {
-  return `${fahrenheitToCelsius(value)}°C`;
+  return getLanguage() === "en" ? `${Math.round(value)}°F` : `${fahrenheitToCelsius(value)}°C`;
 }
+import { getLanguage } from "./language";

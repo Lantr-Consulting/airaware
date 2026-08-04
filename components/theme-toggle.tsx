@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { pick, useLanguage } from "@/lib/language";
 
 // Theme is stamped on <html data-theme> before hydration by the inline
 // script in layout.tsx, so there's no flash. The DOM attribute is the
@@ -18,6 +19,7 @@ function readTheme(): "dark" | "light" {
 }
 
 export function ThemeToggle() {
+  const language = useLanguage();
   const theme = useSyncExternalStore(subscribe, readTheme, () => "dark");
 
   function flip() {
@@ -33,8 +35,8 @@ export function ThemeToggle() {
   return (
     <button
       onClick={flip}
-      title={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
-      aria-label="切换显示主题"
+      title={theme === "dark" ? pick(language, "切换到浅色模式", "Switch to light mode") : pick(language, "切换到深色模式", "Switch to dark mode")}
+      aria-label={pick(language, "切换显示主题", "Switch display theme")}
       className="flex size-8 items-center justify-center rounded-full border border-hairline text-ink-2 transition-colors hover:text-ink"
     >
       {theme === "dark" ? (

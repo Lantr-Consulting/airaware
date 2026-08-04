@@ -131,10 +131,9 @@ Rules:
 - Respect flexibility: never move a fixed activity's time.
 - Tone: practical and specific, not alarmist. Prefer better windows over
   bans; highlight what's genuinely good about the day.
-- Write every user-facing field (summary, title, rationale) in natural
-  Simplified Chinese. Keep JSON keys, activity IDs, kind enums, and HH:MM
-  times unchanged. Convert Fahrenheit values to Celsius in user-facing text;
-  you may use the feelsF input internally. Do not copy English source labels."""
+- {language_rule} Keep JSON keys, activity IDs, kind enums, and HH:MM times
+  unchanged. Use the requested display units in user-facing text; you may use
+  the feelsF input internally. Do not copy source labels."""
 
 
 def _build_executor() -> AgentExecutor:
@@ -179,6 +178,7 @@ def run_plan(
     activities: list[dict],
     lessons: list[dict] | None = None,
     steer: list[str] | None = None,
+    language: str = "zh",
 ) -> dict:
     """Generate, engine-check, and return the day plan record for one user."""
     home = advisor["homeLocation"]
@@ -191,7 +191,11 @@ def run_plan(
         profile=advisor["profile"],
     )
 
-    prompt = f"为 {date_iso} 生成今日安排。用户常住地是 {home['name']}。"
+    prompt = (
+        f"Build the outdoor plan for {date_iso}. The user's home location is {home['name']}."
+        if language == "en"
+        else f"为 {date_iso} 生成今日安排。用户常住地是 {home['name']}。"
+    )
     if lessons:
         # The feedback loop: past declines are standing instructions, not
         # suggestions. Do not re-propose what the user already refused.
@@ -201,7 +205,14 @@ def run_plan(
         )
     if steer:
         prompt += "\n\n用户为本次规划留下的补充要求：\n" + "\n".join(f"- {s}" for s in steer)
-    result = _build_executor().invoke({"input": prompt})
+    result = _build_executor().invoke({
+        "input": prompt,
+        "language_rule": (
+            "Write every user-facing field (summary, title, rationale) in natural English and use Fahrenheit."
+            if language == "en"
+            else "Write every user-facing field (summary, title, rationale) in natural Simplified Chinese and convert Fahrenheit to Celsius."
+        ),
+    })
     raw = _extract_json(result["output"])
 
     thresholds = advisor["thresholds"]
