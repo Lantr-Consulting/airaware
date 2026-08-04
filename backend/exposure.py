@@ -25,6 +25,10 @@ INTENSITY_FACTOR = {"low": 1.0, "moderate": 0.9, "high": 0.75}
 GREAT_SCORE_FLOOR = 80  # a "great window" needs this score AND zero failed checks
 
 
+def _c(fahrenheit: float) -> int:
+    return round((fahrenheit - 32) * 5 / 9)
+
+
 def heat_index_f(temp_f: float, rh: float) -> float:
     """NWS heat index (Rothfusz regression, with the official low/high-RH
     adjustments). Valid for temp >= 80F; below that we return the simple
@@ -88,7 +92,7 @@ def evaluate_window(
     a 0-100 score, and whether a 'great' label is even allowed."""
     if not hours:
         return {
-            "checks": [_check("window", "No forecast hours in this window", None, "—", "exposure_engine", False)],
+            "checks": [_check("window", "这个时段没有可用的逐小时预报", None, "—", "综合暴露评估", False)],
             "severity": "caution",
             "score": 0,
             "greatAllowed": False,
@@ -102,40 +106,41 @@ def evaluate_window(
     uv = max(h["uvIndex"] for h in hours)
     band, _ = uv_band(uv)
     if uv >= thresholds["uvAvoid"]:
-        checks.append(_check("uv_band", f"UV {uv} ({band}) — at or above your avoid-at-{thresholds['uvAvoid']} line", uv, band, "user_uv_avoid", False))
+        checks.append(_check("uv_band", f"紫外线指数 {uv}（{band}），达到或超过你设定的 {thresholds['uvAvoid']} 避免线", uv, band, "个人紫外线避免线", False))
         penalties += 35
     elif uv >= thresholds["uvProtect"]:
-        checks.append(_check("uv_band", f"UV {uv} ({band}) — protection required from UV {thresholds['uvProtect']}", uv, band, f"skin_type_{profile.get('skinType', 3)}", False))
+        checks.append(_check("uv_band", f"紫外线指数 {uv}（{band}），从 {thresholds['uvProtect']} 开始需要采取防护", uv, band, f"皮肤类型 {profile.get('skinType', 3)}", False))
         penalties += 10
     else:
-        checks.append(_check("uv_band", f"UV {uv} ({band}) — under your protection line", uv, band, "who_uv", True))
+        checks.append(_check("uv_band", f"紫外线指数 {uv}（{band}），低于你的防护线", uv, band, "WHO 紫外线分级", True))
 
     # --- Heat (feels-like; Open-Meteo apparent temp, NWS bands) ---
     heat = max(h["apparentF"] for h in hours)
     band, _ = heat_band(heat)
     if heat >= thresholds["heatAvoidF"]:
-        checks.append(_check("heat_index", f"Feels like {heat}°F ({band}) — above your {thresholds['heatAvoidF']}°F avoid line", heat, band, "user_heat_avoid", False))
+        checks.append(_check("heat_index", f"体感约 {_c(heat)}°C（{band}），高于你设定的 {_c(thresholds['heatAvoidF'])}°C 避免线", heat, band, "个人高温避免线", False))
         penalties += 35
     elif heat >= thresholds["heatCautionF"]:
-        checks.append(_check("heat_index", f"Feels like {heat}°F ({band}) — above your {thresholds['heatCautionF']}°F caution line", heat, band, "user_heat_caution", False))
+        checks.append(_check("heat_index", f"体感约 {_c(heat)}°C（{band}），高于你设定的 {_c(thresholds['heatCautionF'])}°C 提醒线", heat, band, "个人高温提醒", False))
         penalties += 18
     else:
-        checks.append(_check("heat_index", f"Feels like {heat}°F ({band}) — under your caution line", heat, band, "nws_heat", True))
+        checks.append(_check("heat_index", f"体感约 {_c(heat)}°C（{band}），低于你的高温提醒线", heat, band, "NWS 体感温度分级", True))
 
     # --- Air quality, scaled by effort ---
     aqi = max(h["usAqi"] for h in hours)
     band, _ = aqi_band(aqi)
     caution_line = round(thresholds["aqiCaution"] * factor)
     avoid_line = round(thresholds["aqiAvoid"] * factor)
-    src = f"user_aqi_x{factor}" if factor != 1.0 else "user_aqi"
+    src = f"个人 AQI 强度系数 {factor}" if factor != 1.0 else "个人 AQI 提醒线"
+    intensity_label = {"low": "低", "moderate": "中等", "high": "高"}.get(intensity, intensity)
     if aqi >= avoid_line:
-        checks.append(_check("aqi_intensity", f"AQI {aqi} ({band}) at {intensity} intensity — above your effective {avoid_line} avoid line", aqi, band, src, False))
+        checks.append(_check("aqi_intensity", f"{intensity_label}强度活动时 AQI {aqi}（{band}），超过实际采用的 {avoid_line} 避免线", aqi, band, src, False))
         penalties += 35
     elif aqi >= caution_line:
-        checks.append(_check("aqi_intensity", f"AQI {aqi} ({band}) at {intensity} intensity — above your effective {caution_line} caution line", aqi, band, src, False))
+        checks.append(_check("aqi_intensity", f"{intensity_label}强度活动时 AQI {aqi}（{band}），超过实际采用的 {caution_line} 提醒线", aqi, band, src, False))
         penalties += 18
     else:
-        checks.append(_check("aqi_intensity", f"AQI {aqi} ({band}) at {intensity} intensity — under your effective {caution_line} line", aqi, band, "epa_aqi", True))
+        checks.append(_check("aqi_intensity", f"{intensity_label}强度活动时 AQI {aqi}（{band}），低于实际采用的 {caution_line} 提醒线", aqi, band, "EPA AQI 指引", True))
 
     # --- Pollen: nullable, never guessed ---
     readings = [h["pollen"] for h in hours if h.get("pollen")]
@@ -144,19 +149,20 @@ def evaluate_window(
         band, sev = pollen_band(worst["index"])
         sensitive = bool(profile.get("pollenAllergies")) or profile.get("asthma")
         line = thresholds["pollenCaution"] if sensitive else min(4, thresholds["pollenCaution"] + 1)
-        src = "user_pollen_allergies" if sensitive else "pollen_band"
+        src = "个人花粉过敏设置" if sensitive else "花粉指数分级"
         if sev >= line:
-            allergens = ", ".join(worst.get("topAllergens", [])) or "pollen"
-            checks.append(_check("pollen_band", f"Pollen {worst['index']} ({band}; {allergens}) — at or above your advice band", worst["index"], band, src, False))
+            allergen_names = {"grass": "禾本科", "ragweed": "豚草", "birch": "桦树", "alder": "桤木", "mugwort": "艾蒿", "olive": "橄榄树", "tree": "树木", "weed": "杂草"}
+            allergens = "、".join(allergen_names.get(x, x) for x in worst.get("topAllergens", [])) or "花粉"
+            checks.append(_check("pollen_band", f"花粉指数 {worst['index']}（{band}；主要为{allergens}），达到或超过你的提醒等级", worst["index"], band, src, False))
             penalties += 12 if sensitive else 6
         else:
-            checks.append(_check("pollen_band", f"Pollen {worst['index']} ({band}) — under your advice band", worst["index"], band, src, True))
+            checks.append(_check("pollen_band", f"花粉指数 {worst['index']}（{band}），低于你的提醒等级", worst["index"], band, src, True))
     else:
-        checks.append(_check("pollen_band", "Pollen: no coverage for this location — skipped, not guessed", None, "No data", "exposure_engine", True))
+        checks.append(_check("pollen_band", "该地点没有花粉数据，因此跳过检查，不作猜测", None, "暂无数据", "综合暴露评估", True))
 
     score = max(0, 100 - penalties)
     failed = [c for c in checks if not c["pass"]]
-    alert = any(c["thresholdSource"].startswith("user_") and "avoid" in c["thresholdSource"] for c in failed)
+    alert = any("避免线" in c["detail"] for c in failed)
     severity = "alert" if alert or penalties >= 35 else ("caution" if failed else "info")
 
     return {
@@ -174,7 +180,7 @@ def annotate_item(item: dict, hourly: list[dict], activity: dict | None, thresho
     window = item.get("window")
     intensity = (activity or {}).get("intensity", "moderate")
     if not window:
-        item["checks"] = [_check("window", "No time window on this item", None, "—", "exposure_engine", True)]
+        item["checks"] = [_check("window", "这条建议没有指定时段", None, "—", "综合暴露评估", True)]
         item["severity"] = item.get("severity", "info")
         return item
 
@@ -193,10 +199,9 @@ def annotate_item(item: dict, hourly: list[dict], activity: dict | None, thresho
             # The veto. Model proposes; code disposes.
             item["kind"] = "warning"
             item["severity"] = verdict["severity"]
-            item["title"] = f"Not a great window: {item.get('title', '')}".strip().rstrip(":")
+            item["title"] = f"这个时段并不适宜：{item.get('title', '')}".strip().rstrip("：")
             item["rationale"] = (
-                "The planner suggested this as a great window, but the engine's "
-                "checks disagree — see below. " + item.get("rationale", "")
+                "规划助手认为这个时段适宜，但环境暴露评估没有通过；请查看下方检查结果。" + item.get("rationale", "")
             )
     else:
         item["severity"] = verdict["severity"] if item.get("kind") != "keep" or verdict["severity"] != "info" else "info"

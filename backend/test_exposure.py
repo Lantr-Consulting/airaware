@@ -47,13 +47,13 @@ def test_heat_index_uses_simple_formula_when_mild():
 # ---------- Band edges: WHO / EPA / NWS / Pollen.com ----------
 
 def test_band_edges():
-    assert uv_band(2)[0] == "Low" and uv_band(3)[0] == "Moderate"
-    assert uv_band(8)[0] == "Very high" and uv_band(11)[0] == "Extreme"
-    assert aqi_band(50)[0] == "Good" and aqi_band(51)[0] == "Moderate"
-    assert aqi_band(101)[0] == "Unhealthy for sensitive groups"
+    assert uv_band(2)[0] == "低" and uv_band(3)[0] == "中等"
+    assert uv_band(8)[0] == "很高" and uv_band(11)[0] == "极高"
+    assert aqi_band(50)[0] == "优" and aqi_band(51)[0] == "良"
+    assert aqi_band(101)[0] == "对敏感人群不健康"
     assert heat_band(79)[1] == 0 and heat_band(80)[1] == 1
-    assert heat_band(103)[0] == "Danger"
-    assert pollen_band(2.4)[0] == "Low" and pollen_band(9.7)[0] == "High"
+    assert heat_band(103)[0] == "危险"
+    assert pollen_band(2.4)[0] == "低" and pollen_band(9.7)[0] == "高"
 
 
 # ---------- Intensity scaling: a hard run is not a picnic ----------
@@ -72,7 +72,7 @@ def test_same_aqi_fails_hard_run_but_passes_stroll():
 def test_heat_avoid_line_is_an_alert():
     verdict = evaluate_window([hour(apparent=106)], "low", THRESHOLDS, PROFILE)
     heat = next(c for c in verdict["checks"] if c["rule"] == "heat_index")
-    assert not heat["pass"] and heat["thresholdSource"] == "user_heat_avoid"
+    assert not heat["pass"] and heat["thresholdSource"] == "个人高温避免线"
     assert verdict["severity"] == "alert"
 
 
@@ -81,7 +81,7 @@ def test_heat_avoid_line_is_an_alert():
 def test_no_pollen_coverage_is_skipped_not_guessed():
     verdict = evaluate_window([hour(pollen=None)], "low", THRESHOLDS, PROFILE)
     p = next(c for c in verdict["checks"] if c["rule"] == "pollen_band")
-    assert p["pass"] and "no coverage" in p["detail"].lower()
+    assert p["pass"] and "没有花粉数据" in p["detail"] and "不作猜测" in p["detail"]
 
 
 # ---------- The veto: model proposes, code disposes ----------

@@ -21,7 +21,7 @@ export const TODAY = "2026-07-31"; // a Friday
 export const NOW_HHMM = "12:00"; // "now" is pinned like the date
 
 export const HOME: Location = {
-  name: "Austin, TX",
+  name: "美国 · 奥斯汀",
   lat: 30.27,
   lon: -97.74,
   tz: "America/Chicago",
@@ -35,12 +35,12 @@ export const ADVISOR: Advisor = {
   paused: false,
   profile: {
     asthma: false,
-    pollenAllergies: ["grass", "ragweed"],
+    pollenAllergies: ["禾本科", "豚草"],
     skinType: 2,
     heatTolerance: "typical",
     kidMode: false,
     notes:
-      "Trains for a 10K in October. Prefers mornings but not before 6:30. Dog needs a real walk every evening.",
+      "正在为 10 月的 10 公里跑步训练。偏好早晨，但不希望早于 6:30；每天晚上要遛狗。",
   },
   thresholds: {
     uvProtect: 3, // skin type II — protection starts at Moderate
@@ -52,7 +52,7 @@ export const ADVISOR: Advisor = {
     pollenCaution: 2,
   },
   homeLocation: HOME,
-  units: "imperial",
+  units: "metric",
 };
 
 // ---------- Activities ----------
@@ -60,19 +60,19 @@ export const ADVISOR: Advisor = {
 export const ACTIVITIES: Activity[] = [
   {
     id: "a1",
-    name: "Morning run",
+    name: "晨跑",
     kind: "run",
     daysOfWeek: [1, 3, 5],
     startTime: "07:00",
     durationMin: 45,
     intensity: "high",
     flexibility: "flex_time",
-    indoorAlternative: "Treadmill at the gym",
+    indoorAlternative: "健身房跑步机",
     enabled: true,
   },
   {
     id: "a2",
-    name: "Bike commute",
+    name: "骑车通勤",
     kind: "commute",
     daysOfWeek: [1, 2, 3, 4, 5],
     startTime: "08:30",
@@ -83,19 +83,19 @@ export const ACTIVITIES: Activity[] = [
   },
   {
     id: "a3",
-    name: "Soccer practice",
+    name: "足球训练",
     kind: "sport",
     daysOfWeek: [2, 4],
     startTime: "17:30",
     durationMin: 90,
     intensity: "high",
     flexibility: "fixed",
-    indoorAlternative: "Indoor futsal court",
+    indoorAlternative: "室内五人制球场",
     enabled: true,
   },
   {
     id: "a4",
-    name: "Trail hike",
+    name: "山野徒步",
     kind: "hike",
     daysOfWeek: [6],
     startTime: "09:00",
@@ -106,7 +106,7 @@ export const ACTIVITIES: Activity[] = [
   },
   {
     id: "a5",
-    name: "Evening dog walk",
+    name: "晚间遛狗",
     kind: "chores",
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
     startTime: "20:00",
@@ -117,7 +117,7 @@ export const ACTIVITIES: Activity[] = [
   },
   {
     id: "a6",
-    name: "Community garden shift",
+    name: "社区花园志愿服务",
     kind: "volunteer",
     daysOfWeek: [0],
     startTime: "10:00",
@@ -151,7 +151,7 @@ const h = (
   precipProb,
   windMph,
   usAqi,
-  pollen: pollenIdx === null ? null : pollenReading(pollenIdx, ["grass", "ragweed"]),
+  pollen: pollenIdx === null ? null : pollenReading(pollenIdx, ["禾本科", "豚草"]),
 });
 
 export const TODAY_HOURLY: HourlyConditions[] = [
@@ -215,85 +215,85 @@ export const PLANS: DayPlan[] = [
     status: "active",
     dayScore: 58,
     summary:
-      "A classic late-July scorcher: the morning is genuinely good, the afternoon is a Danger-band heat sandwich (feels like 106°F, 2–5 pm), and air quality drifts into the ozone yellow zone by mid-afternoon. Front-load anything outdoors.",
-    supersededNote: "Re-planned 6:02 am — tonight's heat lingers longer than yesterday's forecast showed.",
+      "7 月末的典型炎热天气：早晨适合外出；14:00—17:00 体感最高约 41°C，达到危险等级，午后空气质量也会逐渐下降。今天的户外活动尽量安排在早上。",
+    supersededNote: "06:02 已重新规划：最新预报显示，今晚的高温消退得比昨天预计更慢。",
     items: [
       {
         id: "i1",
         activityId: "a1",
         kind: "keep",
-        title: "Morning run, 7:00 — conditions are on your side",
+        title: "07:00 晨跑 · 条件合适",
         rationale:
-          "UV 1 (Low), feels like 82°F, AQI 54 (Moderate but well under your 100 cutoff). Best running hour of the day.",
+          "紫外线指数 1（低），体感约 28°C，AQI 54（良，低于你的 100 警戒值）。这是今天最适合跑步的时段。",
         window: { start: "07:00", end: "07:45" },
         checks: [
-          { rule: "uv_band", detail: "UV 1 — Low, no protection required", value: 1, band: "Low", thresholdSource: "who_uv", pass: true },
-          { rule: "heat_index", detail: "Feels like 82°F — under your 95°F caution line", value: 82, band: "Comfortable", thresholdSource: "user_heat_caution", pass: true },
-          { rule: "aqi_intensity", detail: "AQI 54 at high intensity — under your 100 line", value: 54, band: "Moderate", thresholdSource: "user_aqi_caution", pass: true },
+          { rule: "uv_band", detail: "紫外线指数 1（低），无需额外防晒措施", value: 1, band: "低", thresholdSource: "WHO 紫外线分级", pass: true },
+          { rule: "heat_index", detail: "体感约 28°C，低于你设定的 35°C 提醒线", value: 82, band: "舒适", thresholdSource: "个人高温提醒", pass: true },
+          { rule: "aqi_intensity", detail: "高强度活动时 AQI 54，低于你设定的 100 提醒线", value: 54, band: "良", thresholdSource: "个人空气质量提醒", pass: true },
         ],
         severity: "info",
         status: "auto",
-        evidence: ["Hourly forecast, Open-Meteo (mock)", "Your thresholds v3"],
+        evidence: ["Open-Meteo 逐小时预报（演示数据）", "个人阈值 · 版本 3"],
       },
       {
         id: "i2",
         activityId: "a2",
         kind: "gear",
-        title: "Sunscreen + sleeves for the ride home",
+        title: "下班骑行请准备防晒霜和长袖",
         rationale:
-          "Your 8:30 ride out is UV 3 — right at your protection line (skin type II). The ride home near 5:30 pm is the bigger deal: UV 4 with 25 minutes of full sun.",
+          "08:30 出发时紫外线指数为 3，刚好达到你的防护线（皮肤类型 II）。17:30 回程时紫外线指数约 4，并会连续暴露约 25 分钟，更需要注意。",
         window: { start: "17:30", end: "17:55" },
         checks: [
-          { rule: "uv_band", detail: "UV 3–4 across both rides — at or above your protect-at-3 rule", value: 4, band: "Moderate", thresholdSource: "skin_type_2", pass: false },
+          { rule: "uv_band", detail: "两段骑行的紫外线指数为 3—4，达到或超过你的防护线", value: 4, band: "中等", thresholdSource: "皮肤类型 II", pass: false },
         ],
         severity: "caution",
         status: "auto",
-        evidence: ["Hourly UV forecast (mock)"],
+        evidence: ["逐小时紫外线预报（演示数据）"],
       },
       {
         id: "i3",
         kind: "warning",
-        title: "Danger-band heat, 2–5 pm",
+        title: "14:00—17:00 高温达到危险等级",
         rationale:
-          "Feels-like peaks at 106°F — NWS Danger category. Anything strenuous outdoors in this window is a bad trade. Hydrate ahead of the evening, not during it.",
+          "体感最高约 41°C，达到 NWS“危险”等级。这段时间不适合进行剧烈户外活动；应提前补水，不要等到晚间活动时才开始。",
         window: { start: "14:00", end: "17:00" },
         checks: [
-          { rule: "heat_index", detail: "Feels like 106°F — Danger band, above your 103°F avoid line", value: 106, band: "Danger", thresholdSource: "nws_heat", pass: false },
+          { rule: "heat_index", detail: "体感约 41°C，达到危险等级，也超过你设定的 39°C 避免线", value: 106, band: "危险", thresholdSource: "NWS 体感温度分级", pass: false },
         ],
         severity: "alert",
         status: "auto",
-        evidence: ["Hourly forecast (mock)", "NWS heat-index categories"],
+        evidence: ["逐小时预报（演示数据）", "NWS 体感温度分级"],
       },
       {
         id: "i4",
         activityId: "a5",
         kind: "shift",
-        title: "Push the dog walk to 8:45 pm",
+        title: "遛狗推迟到 20:45",
         rationale:
-          "At 8:00 it still feels like 96°F — over your caution line, and hot pavement for paws. By 8:45 it drops to 92°F with the sun fully down.",
+          "20:00 的体感仍约 36°C，超过你的提醒线，路面也可能烫伤犬爪；到 20:45 太阳完全落下，体感会降到约 33°C。",
         originalWindow: { start: "20:00", end: "20:30" },
         window: { start: "20:45", end: "21:15" },
         checks: [
-          { rule: "heat_index", detail: "96°F at 8:00 pm — above your 95°F caution line", value: 96, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: false },
-          { rule: "heat_index", detail: "92°F by 8:45 pm — back under the line", value: 92, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: true },
+          { rule: "heat_index", detail: "20:00 体感约 36°C，高于你设定的 35°C 提醒线", value: 96, band: "需要格外注意", thresholdSource: "个人高温提醒", pass: false },
+          { rule: "heat_index", detail: "20:45 体感约 33°C，回到提醒线以下", value: 92, band: "需要格外注意", thresholdSource: "个人高温提醒", pass: true },
         ],
         severity: "caution",
         status: "proposed",
-        evidence: ["Hourly forecast (mock)"],
+        evidence: ["逐小时预报（演示数据）"],
       },
       {
         id: "i5",
         kind: "good_window",
-        title: "Best outdoor window: 6:30–8:30 am",
+        title: "最佳户外时段：06:30—08:30",
         rationale:
-          "Low UV, feels-like under 85°F, AQI in the 50s, pollen low-medium. If anything else needs to happen outside today, put it here.",
+          "紫外线较低，体感低于 29°C，AQI 在 50 左右，花粉浓度较低。今天若还有其他户外事项，优先放在这段时间。",
         window: { start: "06:30", end: "08:30" },
         checks: [
-          { rule: "window_score", detail: "All four signals green-to-yellow for the full window", value: null, band: "Great", thresholdSource: "exposure_engine", pass: true },
+          { rule: "window_score", detail: "整个时段内，四项环境信号均处于适宜或尚可范围", value: null, band: "适宜", thresholdSource: "综合暴露评估", pass: true },
         ],
         severity: "great",
         status: "auto",
-        evidence: ["Window scan across all signals (mock)"],
+        evidence: ["多信号时段扫描（演示数据）"],
       },
     ],
   },
@@ -304,40 +304,40 @@ export const PLANS: DayPlan[] = [
     status: "draft",
     dayScore: 44,
     summary:
-      "Saturday looks worse than today: UV 11 (Extreme) at midday, feels-like 108°F, and AQI pushing 102. The 9 am hike start walks straight into it.",
+      "周六的条件比今天更差：中午紫外线指数达到 11（极高），体感约 42°C，AQI 接近 102。若 09:00 才开始徒步，会直接进入最不适宜的时段。",
     items: [
       {
         id: "i6",
         activityId: "a4",
         kind: "shift",
-        title: "Start the hike at 7:00 instead of 9:00",
+        title: "徒步从 09:00 提前到 07:00",
         rationale:
-          "A 9:00 start puts your final hour at UV 9+ and feels-like 100°F. Starting at 7:00 finishes the 3 hours before the worst of it.",
+          "若 09:00 出发，最后一小时会遇到 9 以上的紫外线指数和约 38°C 的体感；07:00 出发可以在条件最差前完成三小时路线。",
         originalWindow: { start: "09:00", end: "12:00" },
         window: { start: "07:00", end: "10:00" },
         checks: [
-          { rule: "uv_band", detail: "UV reaches 9 (Very high) by 11 am — above your avoid-at-8 line", value: 9, band: "Very high", thresholdSource: "user_uv_avoid", pass: false },
-          { rule: "heat_index", detail: "Feels like 100°F by noon — above your 95°F caution line", value: 100, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: false },
-          { rule: "window_score", detail: "7–10 am window passes every check", value: null, band: "OK", thresholdSource: "exposure_engine", pass: true },
+          { rule: "uv_band", detail: "11:00 紫外线指数达到 9（很高），超过你设定的 8 避免线", value: 9, band: "很高", thresholdSource: "个人紫外线避免线", pass: false },
+          { rule: "heat_index", detail: "中午体感约 38°C，高于你设定的 35°C 提醒线", value: 100, band: "需要格外注意", thresholdSource: "个人高温提醒", pass: false },
+          { rule: "window_score", detail: "07:00—10:00 时段通过全部检查", value: null, band: "尚可", thresholdSource: "综合暴露评估", pass: true },
         ],
         severity: "caution",
         status: "proposed",
-        evidence: ["Saturday hourly forecast (mock)"],
+        evidence: ["周六逐小时预报（演示数据）"],
       },
       {
         id: "i7",
         activityId: "a4",
         kind: "relocate",
-        title: "Or: trade the exposed ridge for the creek loop",
+        title: "备选：把山脊路线改为溪谷环线",
         rationale:
-          "If 7:00 is too early, the Barton Creek greenbelt loop is ~70% shaded — it buys you roughly two extra tolerable hours vs. the ridge trail.",
+          "如果 07:00 太早，Barton Creek 绿带环线约有 70% 的树荫；与无遮挡的山脊路线相比，大约能多争取两小时相对可接受的活动时间。",
         window: { start: "08:00", end: "11:00" },
         checks: [
-          { rule: "uv_band", detail: "Shade cover cuts effective exposure below your protect line for most of the loop", value: 6, band: "High", thresholdSource: "skin_type_2", pass: true },
+          { rule: "uv_band", detail: "大部分路段有树荫，可将实际暴露降到你的防护线以下", value: 6, band: "高", thresholdSource: "皮肤类型 II", pass: true },
         ],
         severity: "info",
         status: "proposed",
-        evidence: ["Trail shade estimate (mock)"],
+        evidence: ["路线遮阴估算（演示数据）"],
       },
     ],
   },
@@ -347,23 +347,23 @@ export const PLANS: DayPlan[] = [
     location: HOME,
     status: "superseded",
     dayScore: 61,
-    summary: "Thursday: hot afternoon, decent morning, soccer practice squeaked under the heat line after a 30-minute delay.",
+    summary: "周四午后炎热、早晨尚可；足球训练推迟 30 分钟后，才勉强回到高温避免线以下。",
     items: [
       {
         id: "i0a",
         activityId: "a3",
         kind: "shorten",
-        title: "Cut practice to 60 minutes",
-        rationale: "Feels-like was 104°F at 5:30 pm — above your avoid line. Declined; coach shifted the whole practice 30 minutes later instead.",
+        title: "把训练缩短到 60 分钟",
+        rationale: "17:30 的体感约 40°C，超过你的避免线。你没有接受缩短建议，教练后来把整场训练推迟了 30 分钟。",
         originalWindow: { start: "17:30", end: "19:00" },
         window: { start: "17:30", end: "18:30" },
         checks: [
-          { rule: "heat_index", detail: "104°F at kickoff — above your 103°F avoid line", value: 104, band: "Danger", thresholdSource: "user_heat_avoid", pass: false },
+          { rule: "heat_index", detail: "开场时体感约 40°C，超过你设定的 39°C 避免线", value: 104, band: "危险", thresholdSource: "个人高温避免线", pass: false },
         ],
         severity: "alert",
         status: "declined",
-        feedback: { reason: "Can't shorten team practice — flag it earlier so I can ask the coach to move it instead." },
-        evidence: ["Thursday hourly forecast (mock)"],
+        feedback: { reason: "团队训练不能缩短。下次请更早提醒，我可以先和教练沟通改时间。" },
+        evidence: ["周四逐小时预报（演示数据）"],
       },
     ],
   },
@@ -380,16 +380,16 @@ export const PLAN_RUNS: PlanRun[] = [
     startedAt: `${TODAY}T06:02:00`,
     dates: [TODAY, "2026-08-01"],
     report:
-      "Re-planned today and tomorrow. Kept the 7 am run, proposed pushing the dog walk to 8:45 pm, and flagged Saturday's hike — two options proposed.",
+      "已重新安排今天和明天：保留 07:00 晨跑，建议把遛狗推迟到 20:45，并为周六徒步提供了两个调整方案。",
   },
 ];
 
 // ---------- Advisor chat ----------
 
 export const THREADS: Thread[] = [
-  { id: "t1", title: "Lunch run?", updatedAt: `${TODAY}T12:41:00` },
-  { id: "t2", title: "Cloudy-day sunscreen", updatedAt: "2026-07-29T18:22:00" },
-  { id: "t3", title: "Saturday hike options", updatedAt: `${TODAY}T06:05:00` },
+  { id: "t1", title: "午休时间能跑步吗？", updatedAt: `${TODAY}T12:41:00` },
+  { id: "t2", title: "阴天也要防晒吗？", updatedAt: "2026-07-29T18:22:00" },
+  { id: "t3", title: "周六徒步怎么安排？", updatedAt: `${TODAY}T06:05:00` },
 ];
 
 export const MESSAGES: Message[] = [
@@ -397,7 +397,7 @@ export const MESSAGES: Message[] = [
     id: "m1",
     threadId: "t1",
     role: "user",
-    content: "Any chance I can squeeze a run in at lunch instead of tomorrow morning?",
+    content: "今天午休能不能跑一会儿，替代明天早上的训练？",
     createdAt: `${TODAY}T12:38:00`,
   },
   {
@@ -405,14 +405,14 @@ export const MESSAGES: Message[] = [
     threadId: "t1",
     role: "assistant",
     content:
-      "I'd skip it. Right now it's **UV 10 (Very high)** and feels like **103°F** — that's over your 95°F caution line **and** at your UV avoid line, at high intensity. The engine scores the lunch window 12/100 for a run.\n\nTwo windows that do pass every check:\n\n- **Tonight 8:45–9:30 pm** — feels like 92°F, UV 0, AQI back down to ~70\n- **Tomorrow 6:30–7:15 am** — the best slot in the next 36 hours\n\nWant me to pencil in tonight?",
+      "不建议。现在的**紫外线指数是 10（很高）**，体感约 **39°C**，既超过你设定的 35°C 提醒线，也达到紫外线避免线；午休时段的跑步综合评分只有 12/100。\n\n有两个时段通过了全部检查：\n\n- **今晚 20:45—21:30**：体感约 33°C，紫外线指数 0，AQI 降回约 70\n- **明天 06:30—07:15**：未来 36 小时内最合适的时段\n\n要把今晚这段时间加入计划吗？",
     createdAt: `${TODAY}T12:41:00`,
   },
   {
     id: "m3",
     threadId: "t2",
     role: "user",
-    content: "It's overcast today — do I really need sunscreen for the ride in?",
+    content: "今天是阴天，骑车上班真的还需要防晒吗？",
     createdAt: "2026-07-29T18:20:00",
   },
   {
@@ -420,7 +420,7 @@ export const MESSAGES: Message[] = [
     threadId: "t2",
     role: "assistant",
     content:
-      "Yes — clouds are not sunscreen. This morning was **70% cloud cover but still UV 4 (Moderate)**; up to ~80% of UV gets through typical cloud. Your protect-at-UV-3 rule (skin type II) fired on the actual reading, not on how the sky looked.",
+      "需要。云层不能替代防晒。今天早晨虽然云量达到 **70%**，紫外线指数仍为 **4（中等）**；普通云层下仍可能有大量紫外线到达地面。你的防护规则以实际读数为准：皮肤类型 II 从紫外线指数 3 开始采取防护，不按肉眼看到的天气判断。",
     createdAt: "2026-07-29T18:22:00",
   },
 ];
@@ -430,46 +430,46 @@ export const MESSAGES: Message[] = [
 export const BRIEFINGS: Briefing[] = [
   {
     id: "b1",
-    title: "Morning briefing",
+    title: "晨间简报",
     prompt:
-      "Every morning, summarize today's plan: the day score, anything risky about my scheduled activities, what to wear or bring, and the single best outdoor window.",
+      "每天早晨总结当天计划：当天评分、已安排活动的风险、需要穿戴或携带的物品，以及最适合户外活动的一个时段。",
     cadence: "daily",
     hourLocal: 7,
     enabled: true,
     lastRunAt: `${TODAY}T07:00:00`,
     latestReport:
-      "**Friday, day score 58.** Run at 7 is a green light. Ride home needs sunscreen + sleeves (UV 4). Danger-band heat 2–5 pm — nothing strenuous outside. Dog walk: proposal pending to push it to 8:45 pm. Best window: 6:30–8:30 am.",
+      "**周五，当天评分 58。** 07:00 晨跑条件合适。下班骑行需准备防晒霜和长袖（紫外线指数 4）。14:00—17:00 高温达到危险等级，不安排剧烈户外活动。遛狗建议推迟到 20:45，等待确认。最佳时段为 06:30—08:30。",
     pastRuns: [
-      { date: "2026-07-30", summary: "Day score 61 — practice heat flag, declined shorten, morning all clear." },
-      { date: "2026-07-29", summary: "Day score 66 — overcast but UV 4; sunscreen rule fired anyway." },
-      { date: "2026-07-28", summary: "Day score 71 — best morning of the week, long run suggested and taken." },
+      { date: "2026-07-30", summary: "当天评分 61：训练遇到高温提醒，缩短建议未采用；早晨条件良好。" },
+      { date: "2026-07-29", summary: "当天评分 66：虽然阴天，紫外线指数仍为 4，防晒提醒照常触发。" },
+      { date: "2026-07-28", summary: "当天评分 71：本周最适合跑步的早晨，长跑建议已采用。" },
     ],
   },
   {
     id: "b2",
-    title: "Ozone watch",
+    title: "臭氧提醒",
     prompt:
-      "If air quality crosses into Unhealthy for Sensitive Groups (AQI 101+), alert me and re-check my outdoor activities for the rest of that day.",
+      "当 AQI 达到 101 以上、进入‘对敏感人群不健康’等级时提醒我，并重新检查当天剩余的户外活动。",
     cadence: "on_change",
     trigger: { signal: "aqi", severity: 2 },
     enabled: true,
     lastRunAt: "2026-07-26T15:20:00",
     latestReport:
-      "AQI hit 104 (USG) at 3 pm Sunday. Garden shift had already ended — no changes needed. Evening dog walk cleared at AQI 88 by 8 pm.",
-    pastRuns: [{ date: "2026-07-26", summary: "USG ozone afternoon — no schedule impact." }],
+      "周日 15:00 AQI 达到 104（对敏感人群不健康）。社区花园志愿服务已经结束，无需调整；到 20:00 AQI 降到 88，晚间遛狗通过检查。",
+    pastRuns: [{ date: "2026-07-26", summary: "午后臭氧达到敏感人群提醒等级，但没有影响既定安排。" }],
   },
   {
     id: "b3",
-    title: "Weekend outlook",
+    title: "周末展望",
     prompt:
-      "Every Friday at 4 pm, look at Saturday and Sunday: rank the outdoor windows, flag anything my weekend activities collide with, and suggest the better day for the hike.",
+      "每周五 16:00 查看周六和周日的情况：排列适合户外活动的时段，指出与周末计划冲突的风险，并判断哪一天更适合徒步。",
     cadence: "weekly",
     hourLocal: 16,
     enabled: true,
     lastRunAt: "2026-07-24T16:00:00",
     latestReport:
-      "Both days hot; Sunday marginally better (aqi peak 84 vs 96). Hike: Sunday 7 am start recommended over Saturday.",
-    pastRuns: [{ date: "2026-07-24", summary: "Sunday preferred for the hike; Saturday afternoon written off." }],
+      "两天都比较炎热，但周日略好（AQI 峰值 84，周六为 96）。建议把徒步安排在周日 07:00，而不是周六。",
+    pastRuns: [{ date: "2026-07-24", summary: "周日更适合徒步；周六下午不建议安排户外活动。" }],
   },
 ];
 
@@ -495,7 +495,7 @@ const cityWeek = (
     tempMaxF: day.tempMaxF + heatShift,
     tempMinF: day.tempMinF + heatShift,
     aqiMax: Math.max(15, day.aqiMax + aqiShift),
-    pollen: pollenIdx === null ? null : pollenReading(pollenIdx, ["grass"]),
+    pollen: pollenIdx === null ? null : pollenReading(pollenIdx, ["禾本科"]),
   }));
 
 export const EXPLORE_CITIES: CityConditions[] = [
@@ -505,22 +505,22 @@ export const EXPLORE_CITIES: CityConditions[] = [
     daily: WEEK,
   },
   {
-    location: { name: "Phoenix, AZ", lat: 33.45, lon: -112.07, tz: "America/Phoenix", zip: "85004" },
+    location: { name: "美国 · 菲尼克斯", lat: 33.45, lon: -112.07, tz: "America/Phoenix", zip: "85004" },
     current: { uvIndex: 11, usAqi: 92, apparentF: 111, pollenIdx: 2.1 },
     daily: cityWeek(WEEK, 1, 6, 5, 2.1),
   },
   {
-    location: { name: "Chicago, IL", lat: 41.88, lon: -87.63, tz: "America/Chicago", zip: "60601" },
+    location: { name: "美国 · 芝加哥", lat: 41.88, lon: -87.63, tz: "America/Chicago", zip: "60601" },
     current: { uvIndex: 7, usAqi: 58, apparentF: 88, pollenIdx: 6.8 },
     daily: cityWeek(WEEK, -3, -16, -30, 6.8),
   },
   {
-    location: { name: "Berlin, Germany", lat: 52.52, lon: 13.4, tz: "Europe/Berlin" },
+    location: { name: "德国 · 柏林", lat: 52.52, lon: 13.4, tz: "Europe/Berlin" },
     current: { uvIndex: 5, usAqi: 42, apparentF: 79, pollenIdx: 5.4 },
     daily: cityWeek(WEEK, -5, -25, -45, 5.4),
   },
   {
-    location: { name: "Lagos, Nigeria", lat: 6.52, lon: 3.38, tz: "Africa/Lagos" },
+    location: { name: "尼日利亚 · 拉各斯", lat: 6.52, lon: 3.38, tz: "Africa/Lagos" },
     current: { uvIndex: 8, usAqi: 71, apparentF: 95, pollenIdx: null },
     daily: cityWeek(WEEK, -1, -10, -20, null),
   },

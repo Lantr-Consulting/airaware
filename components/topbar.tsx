@@ -10,7 +10,7 @@ export function TopBar() {
   const live = me !== null;
   const name = live ? me.homeLocation.name : HOME.name;
   const dateStr = live
-    ? new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    ? new Date().toLocaleDateString("zh-CN", { weekday: "short", month: "long", day: "numeric" })
     : fmtDate(TODAY);
 
   return (
@@ -40,7 +40,7 @@ export function TopBar() {
               : "border border-hairline text-ink-muted"
           }`}
         >
-          {live ? "Live" : "Sample data"}
+          {live ? "实时数据" : "演示数据"}
         </span>
         <ThemeToggle />
       </div>

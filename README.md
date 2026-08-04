@@ -9,9 +9,9 @@ the forecast changes.
 > thresholds (WHO, EPA, NWS) into practical daily suggestions. It does not
 > diagnose or treat anything.
 
-A Lantr sample project, built in the same order a student builds theirs.
+A past Lantr student project, kept online by Lantr as a hosted demonstration.
 
-**Live:** https://airaware-omega.vercel.app
+**Live:** https://airaware.lantr.site
 
 ## Status: Milestone 8 — Briefings (always-on)
 

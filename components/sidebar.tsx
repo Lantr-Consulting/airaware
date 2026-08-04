@@ -25,7 +25,7 @@ function Icon({ children }: { children: ReactNode }) {
 const NAV = [
   {
     href: "/today",
-    label: "Today",
+    label: "今日建议",
     icon: (
       <Icon>
         <circle cx="12" cy="12" r="4" />
@@ -35,7 +35,7 @@ const NAV = [
   },
   {
     href: "/planner",
-    label: "Planner",
+    label: "本周安排",
     icon: (
       <Icon>
         <rect x="3" y="4" width="18" height="17" rx="2" />
@@ -45,7 +45,7 @@ const NAV = [
   },
   {
     href: "/activities",
-    label: "Activities",
+    label: "我的活动",
     icon: (
       <Icon>
         <path d="M13 3 5 13h5l-1 8 8-10h-5l1-8z" />
@@ -53,18 +53,8 @@ const NAV = [
     ),
   },
   {
-    href: "/explore",
-    label: "Explore",
-    icon: (
-      <Icon>
-        <circle cx="11" cy="11" r="7" />
-        <line x1="21" y1="21" x2="16.5" y2="16.5" />
-      </Icon>
-    ),
-  },
-  {
     href: "/advisor",
-    label: "Advisor",
+    label: "环境问答",
     icon: (
       <Icon>
         <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3a8.5 8.5 0 0 1 8.5 8.5Z" />
@@ -72,18 +62,8 @@ const NAV = [
     ),
   },
   {
-    href: "/briefings",
-    label: "Briefings",
-    icon: (
-      <Icon>
-        <circle cx="12" cy="12" r="9" />
-        <polyline points="12 7 12 12 15.5 14" />
-      </Icon>
-    ),
-  },
-  {
     href: "/profile",
-    label: "Profile & settings",
+    label: "偏好与设置",
     icon: (
       <Icon>
         <circle cx="12" cy="8" r="4" />
@@ -116,7 +96,7 @@ function Wordmark() {
           AirAware
         </span>
         <span className="block text-[11px] leading-tight text-ink-muted">
-          Outdoor guidance · sample data
+          户外活动助手 · 演示数据
         </span>
       </span>
     </div>
@@ -152,9 +132,9 @@ export function Sidebar() {
       <div className="mt-auto flex flex-col gap-3 px-3">
         <AccountBox />
         <div className="text-[11px] leading-relaxed text-ink-muted">
-          A Lantr sample project.
+          Lantr 往届学生作品 · 持续托管演示
           <br />
-          General guidance, not medical advice.
+          仅供日常参考，不替代医疗建议。
         </div>
       </div>
     </aside>
@@ -179,7 +159,7 @@ function AccountBox() {
   if (email === null) {
     return (
       <Link href="/signin" className="btn-ghost px-3 py-2 text-center text-sm font-medium">
-        Sign in
+        登录
       </Link>
     );
   }
@@ -191,7 +171,7 @@ function AccountBox() {
         onClick={() => supabase.auth.signOut().then(() => window.location.assign("/"))}
         className="mt-0.5 text-xs text-ink-muted hover:text-ink"
       >
-        Sign out
+        退出登录
       </button>
     </div>
   );

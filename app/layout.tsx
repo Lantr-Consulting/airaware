@@ -22,9 +22,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "AirAware — your personal outdoor-health advisor",
+  title: "AirAware｜Lantr 往届学生作品",
   description:
-    "An advisor that plans your week around UV, heat, air quality, and pollen — real forecasts, cited health bands, and a plan that adapts when conditions change. General guidance, not medical advice. A Lantr sample project.",
+    "一位 Lantr 往届学生完成的户外活动安排助手：结合公开天气、空气质量数据和个人日程，帮助用户选择更合适的活动时间。内容只供日常参考，不代替医疗建议。",
 };
 
 export default function RootLayout({
@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="zh-CN"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >

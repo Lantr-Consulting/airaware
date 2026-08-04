@@ -8,9 +8,8 @@ export function GuidanceBanner() {
     <div className="flex items-center gap-2 border-b border-hairline bg-page px-5 py-1.5 text-[11px] text-ink-muted">
       <span aria-hidden className="inline-block size-2 rounded-full bg-accent" />
       <span>
-        <strong className="font-semibold text-ink">General guidance, not medical advice</strong>
-        {" "}— AirAware translates public agency thresholds (WHO, EPA, NWS) into
-        practical daily suggestions.
+        <strong className="font-semibold text-ink">仅供日常参考，不替代医疗建议</strong>
+        {" "}· AirAware 根据 WHO、EPA 与 NWS 的公开标准整理可执行的日常建议。
       </span>
     </div>
   );
@@ -67,7 +66,7 @@ export function ConditionTile({
         {unit && <span className="ml-1 text-sm font-normal text-ink-2">{unit}</span>}
       </div>
       {noCoverage ? (
-        <div className="mt-0.5 text-xs text-ink-muted">No coverage here</div>
+        <div className="mt-0.5 text-xs text-ink-muted">该地区暂无数据</div>
       ) : (
         band && (
           <div className={`mt-0.5 flex items-center gap-1.5 text-xs font-medium ${SEVERITY_TEXT[band.severity]}`}>
@@ -81,10 +80,10 @@ export function ConditionTile({
 }
 
 const STATUS_STYLES: Record<PlanItemStatus, { label: string; cls: string }> = {
-  proposed: { label: "Awaiting your call", cls: "bg-accent/15 text-accent" },
-  accepted: { label: "Accepted", cls: "bg-good/10 text-good" },
-  declined: { label: "Declined", cls: "bg-ink/10 text-ink-2" },
-  auto: { label: "On the plan", cls: "bg-ink/10 text-ink-2" },
+  proposed: { label: "待你确认", cls: "bg-accent/15 text-accent" },
+  accepted: { label: "已接受", cls: "bg-good/10 text-good" },
+  declined: { label: "已拒绝", cls: "bg-ink/10 text-ink-2" },
+  auto: { label: "已纳入计划", cls: "bg-ink/10 text-ink-2" },
 };
 
 export function StatusBadge({ status }: { status: PlanItemStatus }) {
@@ -116,7 +115,7 @@ export function CheckList({ checks }: { checks: RuleCheck[] }) {
           <span>
             <span className="text-ink-2">{c.detail}</span>
             <span className="ml-1.5 text-xs text-ink-muted">({c.thresholdSource})</span>
-            <span className="sr-only">{c.pass ? " (clear)" : " (flagged)"}</span>
+            <span className="sr-only">{c.pass ? "（通过）" : "（需注意）"}</span>
           </span>
         </li>
       ))}

@@ -19,7 +19,7 @@ import {
   steerRun,
   type LiveConditions,
 } from "@/lib/api";
-import { fmtWeekday } from "@/lib/format";
+import { fmtTempF, fmtWeekday } from "@/lib/format";
 import { ACTIVITIES, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
 import { activitiesOn } from "@/lib/schedule";
 import { invalidateMe, useMe } from "@/lib/use-me";
@@ -35,25 +35,25 @@ function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: 
       await patchSettings({ activated: true });
       invalidateMe();
       onActivated();
-      toast("success", "Advisor activated — planning your first day is one click away.");
+      toast("success", "户外助手已启用，现在可以生成第一份今日安排。 ");
     } catch {
-      toast("error", "Couldn't activate — try again.");
+      toast("error", "暂时无法启用，请稍后再试。 ");
     } finally {
       setBusy(false);
     }
   }
 
   const steps = [
-    { href: "/profile", title: "Set your home location", detail: "Plans use your sky, not our demo city.", done: false },
-    { href: "/profile", title: "Describe yourself", detail: "Allergies, skin, heat, kids — plain English becomes enforced limits.", done: hasNotes },
-    { href: "/activities", title: "Review your week", detail: "We seeded a starter week — make it yours.", done: false },
+    { href: "/profile", title: "设置常住地", detail: "之后的建议会采用你所在地的预报，而不是演示城市。", done: false },
+    { href: "/profile", title: "说明个人情况", detail: "过敏、皮肤、高温耐受和儿童同行等信息，会转换成明确的提醒线。", done: hasNotes },
+    { href: "/activities", title: "确认每周活动", detail: "我们准备了一组示例活动，你可以按实际情况修改。", done: false },
   ];
 
   return (
     <Card className="border border-accent/30">
-      <h2 className="text-sm font-semibold tracking-tight">Welcome to AirAware</h2>
+      <h2 className="text-sm font-semibold tracking-tight">开始使用 AirAware</h2>
       <p className="mt-1 text-sm text-ink-2">
-        Three quick steps, then activate. Nothing plans until you bless it.
+        完成三个简单步骤后再启用；未经你确认，系统不会自动调整活动。
       </p>
       <ul className="mt-4 flex flex-col gap-2">
         {steps.map((s, i) => (
@@ -78,9 +78,9 @@ function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: 
         ))}
       </ul>
       <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="text-xs text-ink-muted">Looks like you? Then:</span>
+        <span className="text-xs text-ink-muted">信息确认无误后：</span>
         <button onClick={activate} disabled={busy} className="btn-primary px-5 py-2 text-sm">
-          {busy ? "Activating…" : "Activate my advisor"}
+          {busy ? "正在启用…" : "启用户外助手"}
         </button>
       </div>
     </Card>
@@ -130,8 +130,8 @@ export default function TodayPage() {
       toast(
         "error",
         e instanceof Error && e.message.includes("in flight")
-          ? "A plan run is already in flight — steer it or wait."
-          : "Couldn't start the planner — try again in a moment."
+          ? "已有一次规划正在运行，可以补充要求或稍候。"
+          : "暂时无法开始规划，请稍后再试。"
       );
     }
   }
@@ -147,11 +147,11 @@ export default function TodayPage() {
           setRun(null);
           setElapsed(0);
           setPlan(await getTodayPlan());
-          toast("success", "Your day is planned — every item measured by the engine.");
+          toast("success", "今日安排已生成，每一项都经过环境暴露评估。 ");
         } else if (status.status === "error") {
           setRun(null);
           setElapsed(0);
-          toast("error", "The planner hit an error — try again in a moment.");
+          toast("error", "本次规划出现错误，请稍后再试。 ");
         }
       } catch {}
     }, 3000);
@@ -164,9 +164,9 @@ export default function TodayPage() {
     try {
       await steerRun(run.id, note);
       setSteerDraft("");
-      toast("info", "Noted — the planner reads steering on its next run.");
+      toast("info", "补充要求已记录，将用于下一次规划。 ");
     } catch {
-      toast("error", "Couldn't save the note.");
+      toast("error", "暂时无法保存这条补充要求。 ");
     }
   }
 
@@ -179,14 +179,14 @@ export default function TodayPage() {
   async function onAccept(item: PlanItem): Promise<string | null> {
     const { item: updated, blocked } = await acceptItem(item.id);
     replaceItem(updated);
-    if (blocked) toast("error", "Conditions moved — the engine re-checked and this window no longer clears.");
-    else toast("success", "Accepted — it's on your plan.");
+    if (blocked) toast("error", "环境条件已经变化；重新检查后，这个时段不再通过。 ");
+    else toast("success", "已接受调整，并加入今日安排。 ");
     return blocked;
   }
 
   async function onDecline(item: PlanItem, reason: string): Promise<void> {
     replaceItem(await declineItem(item.id, reason));
-    toast("info", "Noted — the planner treats your reason as a standing lesson.");
+    toast("info", "原因已记录，之后的安排会持续参考。 ");
   }
 
   // ----- pick live or sample data -----
@@ -221,18 +221,18 @@ export default function TodayPage() {
     <div className="flex flex-col gap-6">
       <header>
         <div className="flex items-center gap-2.5 text-sm text-ink-muted">
-          {fmtWeekday(dateIso)}&apos;s outlook
+          {fmtWeekday(dateIso)}户外条件
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
               live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
             }`}
           >
-            {live ? "Live" : "Sample"}
+            {live ? "实时" : "演示"}
           </span>
           {live && <span className="text-xs text-ink-muted">{me?.homeLocation.name}</span>}
           {signedOut && (
             <Link href="/signin" className="text-xs font-medium text-accent hover:underline">
-              Sign in to plan your real day →
+              登录后规划你的实际日程 →
             </Link>
           )}
         </div>
@@ -246,10 +246,10 @@ export default function TodayPage() {
               >
                 {activePlan.dayScore}
               </span>
-              <span className="text-sm text-ink-muted">day score / 100</span>
+              <span className="text-sm text-ink-muted">今日适宜度 / 100</span>
               {live && !run && (
                 <button onClick={planMyDay} className="btn-ghost px-3.5 py-1.5 text-xs">
-                  Re-plan
+                  重新规划
                 </button>
               )}
             </div>
@@ -265,10 +265,10 @@ export default function TodayPage() {
           !run && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <button onClick={planMyDay} className="btn-primary px-5 py-2.5 text-sm">
-                Plan my day
+                生成今日安排
               </button>
               <span className="text-xs text-ink-muted">
-                The agent reads your schedule and the live forecast, and proposes only what the engine clears.
+                助手会结合你的日程与实时预报，只提出通过环境检查的调整建议。
               </span>
             </div>
           )
@@ -277,9 +277,9 @@ export default function TodayPage() {
         {run && (
           <div className="mt-4 max-w-2xl rounded-2xl bg-surface p-4">
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-medium">Planning your day…</span>
+              <span className="font-medium">正在规划今日安排…</span>
               <span className="text-xs text-ink-muted" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {elapsed}s
+                {elapsed} 秒
               </span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
@@ -289,19 +289,18 @@ export default function TodayPage() {
               />
             </div>
             <p className="mt-2 text-xs text-ink-muted">
-              The agent is scoring windows with the exposure engine. Leave it a
-              note — steering lands on the next run.
+              正在用环境暴露评估逐个比较时段。你可以补充要求，下一次规划会参考。
             </p>
             <div className="mt-2 flex items-center gap-2">
               <input
                 value={steerDraft}
                 onChange={(e) => setSteerDraft(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendSteer()}
-                placeholder="e.g. Nothing before 7 am this week"
+                placeholder="例如：这周不要安排在早上 7 点以前"
                 className="flex-1 rounded-full border border-hairline bg-page px-3.5 py-1.5 text-sm placeholder:text-ink-muted"
               />
               <button onClick={sendSteer} className="btn-ghost px-3.5 py-1.5 text-xs">
-                Steer
+                提交补充
               </button>
             </div>
           </div>
@@ -321,22 +320,22 @@ export default function TodayPage() {
               aria-hidden
               className={`inline-block size-2 rounded-full ${me.paused ? "bg-band-1" : "bg-good"}`}
             />
-            Advisor {me.paused ? "paused" : "active"}
+            户外助手{me.paused ? "已暂停" : "运行中"}
           </span>
-          <span className="text-ink-muted">Watching {me.homeLocation.name}</span>
+          <span className="text-ink-muted">当前地点：{me.homeLocation.name}</span>
           {run ? (
-            <span className="text-accent">Planning now…</span>
+            <span className="text-accent">正在规划…</span>
           ) : proposals.length > 0 ? (
             <span className="font-medium text-accent">
-              {proposals.length} decision{proposals.length > 1 ? "s" : ""} waiting on you ↓
+              有 {proposals.length} 项调整等待确认 ↓
             </span>
           ) : activePlan ? (
-            <span className="text-ink-muted">Nothing needs you — plan is set</span>
+            <span className="text-ink-muted">暂无待确认事项，今日安排已就绪</span>
           ) : (
-            <span className="text-ink-muted">No plan yet today</span>
+            <span className="text-ink-muted">今天还没有生成安排</span>
           )}
           <Link href="/advisor" className="ml-auto font-medium text-accent hover:underline">
-            Ask the advisor →
+            咨询户外助手 →
           </Link>
         </div>
       )}
@@ -344,7 +343,7 @@ export default function TodayPage() {
       {proposals.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold tracking-tight">
-            Waiting on you ({proposals.length})
+            等你确认（{proposals.length}）
           </h2>
           {proposals.map((item) => (
             <PlanItemCard key={item.id} item={item} {...handlers} />
@@ -353,24 +352,28 @@ export default function TodayPage() {
       )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <ConditionTile label={live ? "UV index · now" : "UV index · sample"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} />
-        <ConditionTile label="Feels like" value={String(now.apparentF)} unit="°F" band={heatBand(now.apparentF)} />
-        <ConditionTile label="Air quality (US AQI)" value={String(now.usAqi)} band={aqiBand(now.usAqi)} />
+        <ConditionTile label={live ? "紫外线指数 · 当前" : "紫外线指数 · 演示"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} />
+        <ConditionTile label="体感温度" value={fmtTempF(now.apparentF).replace("°C", "")} unit="°C" band={heatBand(now.apparentF)} />
+        <ConditionTile label="空气质量（美国 AQI）" value={String(now.usAqi)} band={aqiBand(now.usAqi)} />
         <ConditionTile
-          label="Pollen"
+          label="花粉指数"
           value={now.pollen ? now.pollen.index.toFixed(1) : "—"}
           band={now.pollen ? pollenBand(now.pollen.index) : undefined}
           noCoverage={now.pollen === null}
         />
       </div>
 
-      <Card title="Your day against the sky" action={<BandLegend />}>
+      <p className="-mt-2 text-xs text-ink-muted">
+        数据来源：Open-Meteo 天气与空气质量；花粉数据仅覆盖支持的美国邮编。美国 AQI 分级仅供地区演示参考。
+      </p>
+
+      <Card title="一天中的环境变化" action={<BandLegend />}>
         <DayTimeline hours={hourly} activities={schedule} nowTime={nowTime} />
       </Card>
 
       {onPlanItems.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">Today&apos;s plan</h2>
+          <h2 className="text-sm font-semibold tracking-tight">今日安排</h2>
           {onPlanItems.map((item) => (
             <PlanItemCard key={item.id} item={item} {...handlers} />
           ))}

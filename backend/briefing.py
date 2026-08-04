@@ -40,7 +40,11 @@ CONTEXT JSON — never state a UV level, AQI, temperature, or pollen level that
 is not in it; if pollen is null, say there is no coverage. Reference their
 thresholds when relevant. Markdown, under 200 words, numbers in **bold**,
 no greeting and no sign-off. General guidance, not medical advice — say so
-only if the instruction asks about health treatment."""
+only if the instruction asks about health treatment.
+
+Always write in natural Simplified Chinese. Convert Fahrenheit values to
+Celsius in user-facing text, while preserving the source numbers internally.
+Keep the tone calm and practical, and never diagnose or recommend medication."""
 
 
 def write_report(user_id: str, advisor: dict, briefing: dict) -> str:
@@ -76,7 +80,7 @@ def write_report(user_id: str, advisor: dict, briefing: dict) -> str:
         model="deepseek-chat",
         messages=[
             {"role": "system", "content": REPORT_SYSTEM + "\n\nCONTEXT " + json.dumps(context)},
-            {"role": "user", "content": "STANDING INSTRUCTION: " + briefing["prompt"][:800]},
+            {"role": "user", "content": "长期简报要求：" + briefing["prompt"][:800]},
         ],
         temperature=0.5,
     )

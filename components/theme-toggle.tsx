@@ -33,8 +33,8 @@ export function ThemeToggle() {
   return (
     <button
       onClick={flip}
-      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      aria-label="Toggle color theme"
+      title={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
+      aria-label="切换显示主题"
       className="flex size-8 items-center justify-center rounded-full border border-hairline text-ink-2 transition-colors hover:text-ink"
     >
       {theme === "dark" ? (

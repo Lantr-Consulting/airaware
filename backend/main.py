@@ -62,7 +62,7 @@ def conditions(
     try:
         data = environment.fetch_conditions(lat, lon, zip_code=zip)
     except Exception as e:  # upstream hiccup -> a clean 502, not a stack trace
-        raise HTTPException(status_code=502, detail=f"conditions upstream: {e}")
+        raise HTTPException(status_code=502, detail="环境数据服务暂不可用，请稍后重试")
     data["location"] = {"name": name or f"{lat:.2f}, {lon:.2f}", "lat": lat, "lon": lon, "tz": data["tz"]}
     return data
 
@@ -72,7 +72,7 @@ def conditions_search(q: str = Query(..., min_length=2)):
     try:
         return {"results": environment.geocode(q)}
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"geocoding upstream: {e}")
+        raise HTTPException(status_code=502, detail="城市搜索服务暂不可用，请稍后重试")
 
 
 # ---------- Account (Milestone 5: one advisor per user, rows in Supabase) ----------
@@ -113,7 +113,7 @@ def me_settings(req: SettingsRequest, user: dict = Depends(auth.current_user)):
     if req.activated is not None:
         fields["activated"] = bool(req.activated)
     if not fields:
-        raise HTTPException(status_code=400, detail="nothing to update")
+        raise HTTPException(status_code=400, detail="没有需要更新的内容")
     return db.advisor_out(db.update_advisor(user["id"], fields))
 
 
@@ -159,7 +159,7 @@ class ActivityPatch(BaseModel):
 def activities_update(activity_id: str, req: ActivityPatch, user: dict = Depends(auth.current_user)):
     row = db.update_activity(user["id"], activity_id, req.model_dump(exclude_none=True))
     if row is None:
-        raise HTTPException(status_code=404, detail="activity not found")
+        raise HTTPException(status_code=404, detail="没有找到这项活动")
     return db.activity_out(row)
 
 
@@ -194,7 +194,7 @@ def plan_today(user: dict = Depends(auth.current_user)):
     advisor = _me(user)
     plan = db.get_plan(user["id"], store.today_local(advisor["homeLocation"]["tz"]))
     if plan is None:
-        raise HTTPException(status_code=404, detail="no plan for today yet")
+        raise HTTPException(status_code=404, detail="今天还没有生成安排")
     return plan
 
 
@@ -206,22 +206,28 @@ def _supersede_note(old_plan: dict | None, new_hourly: list[dict] | None) -> str
     stamp = datetime.now(timezone.utc).strftime("%H:%M UTC")
     old_hourly = old_plan.get("conditions_snapshot") or []
     if not old_hourly or not new_hourly:
-        return f"Re-planned {stamp}."
+        return f"已于 {stamp} 重新规划。"
     deltas = []
     for label, key, unit, floor in (
-        ("air quality", "usAqi", " AQI", 15),
-        ("feels-like", "apparentF", "°F", 4),
-        ("UV", "uvIndex", "", 2),
+        ("空气质量", "usAqi", " AQI", 15),
+        ("体感温度", "apparentF", "°F", 4),
+        ("紫外线指数", "uvIndex", "", 2),
     ):
         old_max = max(h[key] for h in old_hourly)
         new_max = max(h[key] for h in new_hourly)
         if abs(new_max - old_max) >= floor:
-            direction = "worsened" if new_max > old_max else "improved"
-            deltas.append((abs(new_max - old_max) / max(floor, 1), f"{label} {direction} ({old_max}{unit} → {new_max}{unit})"))
+            direction = "变差" if new_max > old_max else "改善"
+            if key == "apparentF":
+                old_text = f"{round((old_max - 32) * 5 / 9)}°C"
+                new_text = f"{round((new_max - 32) * 5 / 9)}°C"
+            else:
+                old_text = f"{old_max}{unit}"
+                new_text = f"{new_max}{unit}"
+            deltas.append((abs(new_max - old_max) / max(floor, 1), f"{label}{direction}（{old_text} → {new_text}）"))
     if not deltas:
-        return f"Re-planned {stamp} — forecast largely unchanged."
+        return f"已于 {stamp} 重新规划，预报整体变化不大。"
     deltas.sort(reverse=True)
-    return f"Re-planned {stamp} — {deltas[0][1]}."
+    return f"已于 {stamp} 重新规划：{deltas[0][1]}。"
 
 
 def _plan_job(user_id: str, run_id: str, date_iso: str, advisor: dict, activities: list[dict]) -> None:
@@ -254,18 +260,18 @@ def _plan_job(user_id: str, run_id: str, date_iso: str, advisor: dict, activitie
 @app.post("/plan/generate")
 def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user)):
     if llm is None:
-        raise HTTPException(status_code=503, detail="LLM not configured")
+        raise HTTPException(status_code=503, detail="规划模型尚未配置")
     advisor, activities = _advisor_ctx(user)
     if not advisor["activated"]:
-        raise HTTPException(status_code=409, detail="activate your advisor first — review your profile and limits, then Activate")
+        raise HTTPException(status_code=409, detail="请先确认个人情况和提醒线，再启用户外助手")
     if advisor["paused"]:
-        raise HTTPException(status_code=409, detail="advisor is paused")
+        raise HTTPException(status_code=409, detail="户外助手当前已暂停")
     today = store.today_local(advisor["homeLocation"]["tz"])
     date_iso = req.date or today
     if date_iso != today:
-        raise HTTPException(status_code=400, detail="plans are today-only for now")
+        raise HTTPException(status_code=400, detail="当前版本仅支持生成今日安排")
     if not db.acquire_run_lock(user["id"]):
-        raise HTTPException(status_code=409, detail="a plan run is already in flight — steer it or wait")
+        raise HTTPException(status_code=409, detail="已有一次规划正在运行，可以补充要求或稍候")
     run = db.create_run(user["id"], [date_iso])
     threading.Thread(
         target=_plan_job,
@@ -279,7 +285,7 @@ def plan_generate(req: GenerateRequest, user: dict = Depends(auth.current_user))
 def plan_run_status(run_id: str, user: dict = Depends(auth.current_user)):
     run = db.get_run(user["id"], run_id)
     if run is None:
-        raise HTTPException(status_code=404, detail="run not found")
+        raise HTTPException(status_code=404, detail="没有找到这次规划")
     return db.run_out(run)
 
 
@@ -291,10 +297,10 @@ class SteerRequest(BaseModel):
 def plan_run_steer(run_id: str, req: SteerRequest, user: dict = Depends(auth.current_user)):
     note = req.note.strip()[:300]
     if not note:
-        raise HTTPException(status_code=400, detail="empty note")
+        raise HTTPException(status_code=400, detail="补充要求不能为空")
     run = db.append_steer(user["id"], run_id, note)
     if run is None:
-        raise HTTPException(status_code=404, detail="run not found")
+        raise HTTPException(status_code=404, detail="没有找到这次规划")
     return db.run_out(run)
 
 
@@ -304,7 +310,7 @@ def accept_item(item_id: str, req: AcceptRequest, user: dict = Depends(auth.curr
     proposal was born under. If an avoid-line check fails now, we refuse."""
     row = db.get_item(user["id"], item_id)
     if row is None:
-        raise HTTPException(status_code=404, detail="plan item not found")
+        raise HTTPException(status_code=404, detail="没有找到这条安排")
     advisor, activities = _advisor_ctx(user)
     home = advisor["homeLocation"]
     hourly = environment.fetch_conditions(home["lat"], home["lon"], zip_code=home.get("zip"))["hourly"]
@@ -315,7 +321,7 @@ def accept_item(item_id: str, req: AcceptRequest, user: dict = Depends(auth.curr
     activity = next((a for a in activities if a["id"] == item.get("activityId")), None)
     exposure.annotate_item(item, hourly, activity, advisor["thresholds"], advisor["profile"])
 
-    blocked = any(not c["pass"] and "avoid" in c.get("thresholdSource", "") for c in item["checks"])
+    blocked = any(not c["pass"] and "避免线" in c.get("detail", "") for c in item["checks"])
     fields = {
         "window": item.get("window"),
         "checks": item["checks"],
@@ -329,7 +335,7 @@ def accept_item(item_id: str, req: AcceptRequest, user: dict = Depends(auth.curr
         db.update_item(user["id"], item_id, fields)
         raise HTTPException(
             status_code=409,
-            detail={"message": "Conditions moved — this window now crosses an avoid line. Fresh checks attached.", "item": item},
+            detail={"message": "环境条件已经变化，这个时段现在越过了避免线；已附上最新检查结果。", "item": item},
         )
     updated = db.update_item(user["id"], item_id, {**fields, "status": "accepted"})
     return db.item_out(updated)
@@ -342,7 +348,7 @@ def decline_item(item_id: str, req: DeclineRequest, user: dict = Depends(auth.cu
         {"status": "declined", "feedback": {"reason": req.reason.strip()[:300]}},
     )
     if updated is None:
-        raise HTTPException(status_code=404, detail="plan item not found")
+        raise HTTPException(status_code=404, detail="没有找到这条安排")
     return db.item_out(updated)
 
 
@@ -397,7 +403,7 @@ def briefings_list(user: dict = Depends(auth.current_user)):
 def briefings_create(req: BriefingRequest, user: dict = Depends(auth.current_user)):
     _me(user)
     if req.cadence not in VALID_CADENCES:
-        raise HTTPException(status_code=400, detail="bad cadence")
+        raise HTTPException(status_code=400, detail="不支持这个运行频率")
     fields = req.model_dump()
     fields["hourLocal"] = max(0, min(23, fields["hourLocal"]))
     row = db.create_briefing(user["id"], fields)
@@ -408,10 +414,10 @@ def briefings_create(req: BriefingRequest, user: dict = Depends(auth.current_use
 def briefings_update(briefing_id: str, req: BriefingPatch, user: dict = Depends(auth.current_user)):
     fields = req.model_dump(exclude_none=True)
     if "cadence" in fields and fields["cadence"] not in VALID_CADENCES:
-        raise HTTPException(status_code=400, detail="bad cadence")
+        raise HTTPException(status_code=400, detail="不支持这个运行频率")
     row = db.update_briefing(user["id"], briefing_id, fields)
     if row is None:
-        raise HTTPException(status_code=404, detail="briefing not found")
+        raise HTTPException(status_code=404, detail="没有找到这份简报")
     return db.briefing_out(row)
 
 
@@ -424,10 +430,10 @@ def briefings_delete(briefing_id: str, user: dict = Depends(auth.current_user)):
 @app.post("/briefings/{briefing_id}/run")
 def briefings_run(briefing_id: str, user: dict = Depends(auth.current_user)):
     if llm is None:
-        raise HTTPException(status_code=503, detail="LLM not configured")
+        raise HTTPException(status_code=503, detail="简报模型尚未配置")
     row = db.get_briefing(user["id"], briefing_id)
     if row is None:
-        raise HTTPException(status_code=404, detail="briefing not found")
+        raise HTTPException(status_code=404, detail="没有找到这份简报")
     advisor = _me(user)
     import briefing as briefing_engine
 
@@ -470,13 +476,16 @@ Rules:
   kidMode -> heatCautionF 90, heatAvoidF 100; typical -> 95/103; high -> 98/107.
   uvAvoid 8 unless they say they burn instantly (then 6).
 - Be conservative when unsure; never invent medical conditions they didn't state.
+- Write the profile.notes field in natural Simplified Chinese. Keep internal
+  enum values and JSON keys exactly as specified. The user's Chinese terms for
+  allergens should still be mapped to the allowed English enum values.
 """
 
 
 @app.post("/interpret-profile")
 def interpret_profile(req: InterpretRequest):
     if llm is None:
-        raise HTTPException(status_code=503, detail="LLM not configured")
+        raise HTTPException(status_code=503, detail="解析模型尚未配置")
     resp = llm.chat.completions.create(
         model=MODEL,
         messages=[
@@ -489,7 +498,7 @@ def interpret_profile(req: InterpretRequest):
     try:
         data = json.loads(resp.choices[0].message.content)
     except (json.JSONDecodeError, TypeError):
-        raise HTTPException(status_code=502, detail="interpreter returned non-JSON")
+        raise HTTPException(status_code=502, detail="解析服务没有返回有效结果")
     return _validate_interpretation(data)
 
 
@@ -583,19 +592,21 @@ Hard rules:
 - Ground every claim in the CONDITIONS JSON provided. Never state a UV level,
   AQI, temperature, or pollen level that is not in it. If pollen is null, say
   there is no pollen coverage for this location — never guess.
-- Reference the user's own thresholds when relevant ("over your 95°F caution
-  line"), from the THRESHOLDS JSON if given.
+- Reference the user's own thresholds when relevant, from the THRESHOLDS JSON
+  if given. Convert Fahrenheit source values to Celsius in the reply.
 - You are general guidance, not medical advice; if asked for diagnosis or
   treatment, say so and suggest a clinician.
 - Prefer giving a better time window over saying "no".
 - Keep replies under 180 words. Use **bold** for the key numbers.
+- Always answer in natural Simplified Chinese. Do not diagnose, recommend
+  medication, or present general guidance as medical advice.
 """
 
 
 @app.post("/chat")
 def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
     if llm is None:
-        raise HTTPException(status_code=503, detail="LLM not configured")
+        raise HTTPException(status_code=503, detail="问答模型尚未配置")
 
     # Signed in: the server's records are the truth — location, profile,
     # thresholds, and today's plan come from the user's own rows.
@@ -608,7 +619,7 @@ def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
         req.thresholds = advisor["thresholds"]
         thread_id = req.threadId
         if thread_id is None:
-            thread_id = db.create_thread(user["id"], req.message.strip()[:48] or "New conversation")["id"]
+            thread_id = db.create_thread(user["id"], req.message.strip()[:48] or "新对话")["id"]
             req.history = []
         else:
             req.history = [ChatMessage(**m) for m in (
@@ -653,9 +664,9 @@ def chat(req: ChatRequest, user: dict | None = Depends(optional_user)):
                 )
             )
         except Exception as e:
-            context_parts.append(f"CONDITIONS unavailable ({e}) — say so; do not invent numbers.")
+            context_parts.append(f"环境数据暂不可用（{e}），请明确说明，不要编造数值。")
     else:
-        context_parts.append("CONDITIONS not provided — say you need a location; do not invent numbers.")
+        context_parts.append("没有提供环境数据；请说明需要地点信息，不要编造数值。")
 
     if req.profile:
         context_parts.append("PROFILE " + json.dumps(req.profile))

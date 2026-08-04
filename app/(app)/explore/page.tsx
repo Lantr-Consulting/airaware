@@ -7,6 +7,7 @@ import { aqiBand, heatBand, pollenBand, uvBand } from "@/lib/bands";
 import { getConditions, patchSettings, searchCities } from "@/lib/api";
 import { EXPLORE_CITIES } from "@/lib/mock";
 import { invalidateMe, useMe } from "@/lib/use-me";
+import { fmtTempF } from "@/lib/format";
 import type { DailySummary, Location } from "@/lib/types";
 
 const CELL_BG = ["bg-band-0", "bg-band-1", "bg-band-2", "bg-band-3", "bg-band-4"];
@@ -33,9 +34,9 @@ export default function ExplorePage() {
     try {
       await patchSettings({ homeLocation: loc });
       invalidateMe();
-      toast("success", `Home set to ${loc.name} — Today and the planner follow.`);
+      toast("success", `常住地已设为 ${loc.name}，今日建议和本周安排会同步更新。`);
     } catch {
-      toast("error", "Couldn't set home — try again.");
+      toast("error", "暂时无法保存常住地，请稍后再试。 ");
     }
   }
 
@@ -90,7 +91,7 @@ export default function ExplorePage() {
     try {
       const hits = await searchCities(q);
       if (hits.length === 0) {
-        setNotice(`No city found for “${q}”.`);
+        setNotice(`没有找到“${q}”。`);
         return;
       }
       const top = hits[0];
@@ -109,7 +110,7 @@ export default function ExplorePage() {
       setCards((prev) => [card, ...prev.filter((c) => c.location.name !== top.name)]);
       setQuery("");
     } catch {
-      setNotice("Search is unavailable right now — showing sample cities.");
+      setNotice("搜索暂时不可用，当前展示演示城市。 ");
     } finally {
       setSearching(false);
     }
@@ -123,17 +124,16 @@ export default function ExplorePage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Explore</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">城市环境</h1>
         <p className="mt-1 text-sm text-ink-2">
-          Conditions anywhere — no account needed. Search any city on Earth for
-          its UV, heat, air, and pollen picture.
+          无需登录即可查询任意城市的紫外线、体感温度、空气质量和花粉情况。
         </p>
         <div className="mt-4 flex max-w-md items-center gap-2">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && runSearch()}
-            placeholder={offline ? "Backend offline — filtering samples…" : "Search any city…"}
+            placeholder={offline ? "服务暂不可用，正在筛选演示城市…" : "搜索任意城市…"}
             className="flex-1 rounded-full border border-hairline bg-surface px-4 py-2.5 text-sm placeholder:text-ink-muted"
           />
           <button
@@ -141,14 +141,13 @@ export default function ExplorePage() {
             disabled={offline || searching}
             className="btn-primary px-4 py-2.5 text-sm"
           >
-            {searching ? "…" : "Search"}
+            {searching ? "…" : "搜索"}
           </button>
         </div>
         {notice && <p className="mt-2 text-xs text-ink-muted">{notice}</p>}
         {offline && (
           <p className="mt-2 text-xs text-ink-muted">
-            The conditions backend isn&apos;t reachable — these cards are sample
-            data until it comes back.
+            暂时无法连接环境数据服务，以下卡片目前展示演示数据。
           </p>
         )}
       </header>
@@ -175,22 +174,22 @@ export default function ExplorePage() {
                       c.live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
                     }`}
                   >
-                    {c.live ? "Live" : "Sample"}
+                    {c.live ? "实时" : "演示"}
                   </span>
                   {me && me.homeLocation.name !== c.location.name && (
                     <button
                       onClick={() => setAsHome(c.location)}
                       className="btn-ghost px-2.5 py-0.5 text-[11px]"
                     >
-                      Set as home
+                      设为常住地
                     </button>
                   )}
                   {me && me.homeLocation.name === c.location.name && (
-                    <span className="text-[11px] font-medium text-accent">Home</span>
+                    <span className="text-[11px] font-medium text-accent">常住地</span>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="mr-1 text-[11px] text-ink-muted">Next 7 days</span>
+                  <span className="mr-1 text-[11px] text-ink-muted">未来 7 天</span>
                   {worstByDay.map((sev, i) => (
                     <span
                       key={i}
@@ -201,11 +200,11 @@ export default function ExplorePage() {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <ConditionTile label="UV index" value={String(c.current.uvIndex)} band={uvBand(c.current.uvIndex)} />
-                <ConditionTile label="Feels like" value={String(c.current.apparentF)} unit="°F" band={heatBand(c.current.apparentF)} />
-                <ConditionTile label="US AQI" value={String(c.current.usAqi)} band={aqiBand(c.current.usAqi)} />
+                <ConditionTile label="紫外线指数" value={String(c.current.uvIndex)} band={uvBand(c.current.uvIndex)} />
+                <ConditionTile label="体感温度" value={fmtTempF(c.current.apparentF).replace("°C", "")} unit="°C" band={heatBand(c.current.apparentF)} />
+                <ConditionTile label="空气质量（美国 AQI）" value={String(c.current.usAqi)} band={aqiBand(c.current.usAqi)} />
                 <ConditionTile
-                  label="Pollen"
+                  label="花粉指数"
                   value={c.current.pollenIdx === null ? "—" : c.current.pollenIdx.toFixed(1)}
                   band={c.current.pollenIdx === null ? undefined : pollenBand(c.current.pollenIdx)}
                   noCoverage={c.current.pollenIdx === null}
@@ -216,37 +215,34 @@ export default function ExplorePage() {
         })}
       </div>
 
-      <Card title="What the bands mean">
+      <Card title="如何理解这些等级">
         <div className="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
           <div>
-            <div className="font-medium">UV index (WHO)</div>
+            <div className="font-medium">紫外线指数（WHO）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              0–2 Low · 3–5 Moderate · 6–7 High · 8–10 Very high · 11+ Extreme.
-              Protection starts mattering at Moderate — clouds are not sunscreen.
+              0—2 低 · 3—5 中等 · 6—7 高 · 8—10 很高 · 11 以上极高。
+              从中等级别开始就应考虑防护；阴天也不能替代防晒。
             </p>
           </div>
           <div>
-            <div className="font-medium">US AQI (EPA)</div>
+            <div className="font-medium">美国 AQI（EPA）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              0–50 Good · 51–100 Moderate · 101–150 Unhealthy for sensitive
-              groups · 151–200 Unhealthy · 201+ Very unhealthy. Hard exercise
-              multiplies your intake.
+              0—50 优 · 51—100 良 · 101—150 对敏感人群不健康 · 151—200 不健康 ·
+              201 以上非常不健康。活动强度越高，吸入污染物的量也越大。
             </p>
           </div>
           <div>
-            <div className="font-medium">Heat index (NWS)</div>
+            <div className="font-medium">体感温度（NWS）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              Feels-like under 80°F is comfortable; 80–89 Caution · 90–102
-              Extreme caution · 103–124 Danger. Humidity is what turns hot into
-              dangerous.
+              体感低于约 27°C 为舒适；27—32°C 需要注意，32—39°C 需要格外注意，
+              39—51°C 为危险。湿度会显著放大高温带来的风险。
             </p>
           </div>
           <div>
-            <div className="font-medium">Pollen (0–12 index)</div>
+            <div className="font-medium">花粉指数（0—12）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              Under 2.5 Low · to 4.9 Low–medium · to 7.3 Medium · to 9.7
-              Medium–high · above that High. Coverage is regional — where
-              there&apos;s no data, AirAware says so instead of guessing.
+              低于 2.5 为低，4.9 以下为较低，7.3 以下为中等，9.7 以下为较高，超过后为高。
+              花粉数据有地区限制；没有可靠数据时，AirAware 会明确说明，不会猜测。
             </p>
           </div>
         </div>

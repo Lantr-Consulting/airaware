@@ -1,6 +1,6 @@
 import type { Activity, HourlyConditions } from "@/lib/types";
 import { aqiBand, heatBand, pollenBand, uvBand } from "@/lib/bands";
-import { fmtTime } from "@/lib/format";
+import { fahrenheitToCelsius, fmtTime } from "@/lib/format";
 
 // The day at a glance: a feels-like curve on top, one band strip per signal
 // below it, and the day's activities on the same time axis. Colors come from
@@ -51,7 +51,7 @@ function TempCurve({ hours }: { hours: HourlyConditions[] }) {
         className="absolute -top-1 text-[10px] font-medium text-ink-2"
         style={{ left: `min(${(peakIdx / (temps.length - 1)) * 100}%, 88%)` }}
       >
-        peak {max}°
+        最高 {fahrenheitToCelsius(max)}°C
       </span>
     </div>
   );
@@ -74,10 +74,10 @@ export function DayTimeline({
 
   const rows: { label: string; severities: (number | null)[] }[] = [
     { label: "UV", severities: hours.map((x) => uvBand(x.uvIndex).severity) },
-    { label: "Heat", severities: hours.map((x) => heatBand(x.apparentF).severity) },
-    { label: "Air", severities: hours.map((x) => aqiBand(x.usAqi).severity) },
+    { label: "体感", severities: hours.map((x) => heatBand(x.apparentF).severity) },
+    { label: "空气", severities: hours.map((x) => aqiBand(x.usAqi).severity) },
     {
-      label: "Pollen",
+      label: "花粉",
       severities: hours.map((x) =>
         x.pollen === null ? null : pollenBand(x.pollen.index).severity
       ),
@@ -89,13 +89,13 @@ export function DayTimeline({
       <div className="flex gap-3">
         {/* Label gutter — heights mirror the content column exactly */}
         <div className="flex w-12 shrink-0 flex-col gap-1.5 text-right text-xs text-ink-muted">
-          <span className="flex h-14 items-end justify-end pb-0.5">Feels</span>
+          <span className="flex h-14 items-end justify-end pb-0.5">体感</span>
           {rows.map((r) => (
             <span key={r.label} className="flex h-4 items-center justify-end">
               {r.label}
             </span>
           ))}
-          <span className="mt-1 flex h-7 items-center justify-end">Plans</span>
+          <span className="mt-1 flex h-7 items-center justify-end">安排</span>
         </div>
 
         {/* Content column shares one axis; the now-marker crosses all of it */}
@@ -136,7 +136,7 @@ export function DayTimeline({
           {nowPct !== null && nowPct >= 0 && nowPct <= 100 && (
             <span
               aria-hidden
-              title="Now"
+              title="现在"
               className="pointer-events-none absolute inset-y-0 z-10 border-l border-dashed border-ink/50"
               style={{ left: `${nowPct}%` }}
             />
@@ -161,11 +161,11 @@ export function DayTimeline({
 
 export function BandLegend() {
   const steps = [
-    { label: "Clear", cls: "bg-band-0" },
-    { label: "Easy", cls: "bg-band-1" },
-    { label: "Caution", cls: "bg-band-2" },
-    { label: "Avoid", cls: "bg-band-3" },
-    { label: "Extreme", cls: "bg-band-4" },
+    { label: "适宜", cls: "bg-band-0" },
+    { label: "尚可", cls: "bg-band-1" },
+    { label: "注意", cls: "bg-band-2" },
+    { label: "避免", cls: "bg-band-3" },
+    { label: "极端", cls: "bg-band-4" },
   ];
   return (
     <div className="flex flex-wrap items-center gap-3 text-[11px] text-ink-muted">
@@ -177,7 +177,7 @@ export function BandLegend() {
       ))}
       <span className="flex items-center gap-1.5">
         <span aria-hidden className="inline-block size-2.5 rounded-sm bg-surface-2" />
-        No data
+        暂无数据
       </span>
     </div>
   );

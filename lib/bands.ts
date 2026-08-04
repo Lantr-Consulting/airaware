@@ -12,39 +12,39 @@ export interface BandInfo {
 
 // WHO UV index bands.
 export function uvBand(uv: number): BandInfo {
-  if (uv < 3) return { band: "Low", severity: 0 };
-  if (uv < 6) return { band: "Moderate", severity: 1 };
-  if (uv < 8) return { band: "High", severity: 2 };
-  if (uv < 11) return { band: "Very high", severity: 3 };
-  return { band: "Extreme", severity: 4 };
+  if (uv < 3) return { band: "低", severity: 0 };
+  if (uv < 6) return { band: "中等", severity: 1 };
+  if (uv < 8) return { band: "高", severity: 2 };
+  if (uv < 11) return { band: "很高", severity: 3 };
+  return { band: "极高", severity: 4 };
 }
 
 // EPA US AQI categories (0–4 collapses the two worst into severity 4).
 export function aqiBand(aqi: number): BandInfo {
-  if (aqi <= 50) return { band: "Good", severity: 0 };
-  if (aqi <= 100) return { band: "Moderate", severity: 1 };
-  if (aqi <= 150) return { band: "Unhealthy for sensitive groups", severity: 2 };
-  if (aqi <= 200) return { band: "Unhealthy", severity: 3 };
-  if (aqi <= 300) return { band: "Very unhealthy", severity: 4 };
-  return { band: "Hazardous", severity: 4 };
+  if (aqi <= 50) return { band: "优", severity: 0 };
+  if (aqi <= 100) return { band: "良", severity: 1 };
+  if (aqi <= 150) return { band: "对敏感人群不健康", severity: 2 };
+  if (aqi <= 200) return { band: "不健康", severity: 3 };
+  if (aqi <= 300) return { band: "非常不健康", severity: 4 };
+  return { band: "危险", severity: 4 };
 }
 
 // NWS heat-index categories, on feels-like °F.
 export function heatBand(apparentF: number): BandInfo {
-  if (apparentF < 80) return { band: "Comfortable", severity: 0 };
-  if (apparentF < 90) return { band: "Caution", severity: 1 };
-  if (apparentF < 103) return { band: "Extreme caution", severity: 2 };
-  if (apparentF < 125) return { band: "Danger", severity: 3 };
-  return { band: "Extreme danger", severity: 4 };
+  if (apparentF < 80) return { band: "舒适", severity: 0 };
+  if (apparentF < 90) return { band: "注意", severity: 1 };
+  if (apparentF < 103) return { band: "需要格外注意", severity: 2 };
+  if (apparentF < 125) return { band: "危险", severity: 3 };
+  return { band: "极度危险", severity: 4 };
 }
 
 // Pollen.com 0–12 index bands.
 export function pollenBand(index: number): BandInfo {
-  if (index < 2.5) return { band: "Low", severity: 0 };
-  if (index < 4.9) return { band: "Low–medium", severity: 1 };
-  if (index < 7.3) return { band: "Medium", severity: 2 };
-  if (index < 9.7) return { band: "Medium–high", severity: 3 };
-  return { band: "High", severity: 4 };
+  if (index < 2.5) return { band: "低", severity: 0 };
+  if (index < 4.9) return { band: "较低", severity: 1 };
+  if (index < 7.3) return { band: "中等", severity: 2 };
+  if (index < 9.7) return { band: "较高", severity: 3 };
+  return { band: "高", severity: 4 };
 }
 
 export function pollenReading(

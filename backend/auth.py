@@ -23,7 +23,7 @@ _TTL = 60.0
 
 def current_user(authorization: str = Header(default="")) -> dict[str, Any]:
     if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="sign in required")
+        raise HTTPException(status_code=401, detail="请先登录")
     token = authorization.removeprefix("Bearer ").strip()
 
     hit = _cache.get(token)
@@ -36,7 +36,7 @@ def current_user(authorization: str = Header(default="")) -> dict[str, Any]:
         timeout=10,
     )
     if r.status_code != 200:
-        raise HTTPException(status_code=401, detail="invalid or expired session")
+        raise HTTPException(status_code=401, detail="登录状态无效或已过期，请重新登录")
     body = r.json()
     user = {"id": body["id"], "email": body.get("email", "")}
     _cache[token] = (time.time(), user)

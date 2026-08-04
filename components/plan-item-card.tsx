@@ -6,14 +6,14 @@ import { CheckList, StatusBadge } from "./ui";
 import { fmtWindow } from "@/lib/format";
 
 const KIND_LABEL: Record<PlanItemKind, string> = {
-  keep: "On the plan",
-  shift: "Move it",
-  shorten: "Shorten it",
-  relocate: "Change route",
-  indoor: "Take it inside",
-  gear: "Bring gear",
-  good_window: "Great window",
-  warning: "Heads-up",
+  keep: "按原计划",
+  shift: "调整时间",
+  shorten: "缩短时长",
+  relocate: "更换路线",
+  indoor: "改到室内",
+  gear: "装备提醒",
+  good_window: "适合外出",
+  warning: "风险提醒",
 };
 
 const SEVERITY_EDGE: Record<PlanItem["severity"], string> = {
@@ -60,7 +60,7 @@ export function PlanItemCard({
     try {
       setBlockedMsg(await onAccept(item));
     } catch {
-      setBlockedMsg("Couldn't reach the backend — nothing changed.");
+      setBlockedMsg("暂时无法连接服务，计划没有发生变化。 ");
     } finally {
       setPending(false);
     }
@@ -79,7 +79,7 @@ export function PlanItemCard({
       await onDecline(item, r);
       setDeclining(false);
     } catch {
-      setBlockedMsg("Couldn't reach the backend — nothing changed.");
+      setBlockedMsg("暂时无法连接服务，计划没有发生变化。 ");
     } finally {
       setPending(false);
     }
@@ -124,8 +124,7 @@ export function PlanItemCard({
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs text-ink-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
               <span aria-hidden className="inline-block size-2 rounded-full bg-good" />
-              {item.checks.filter((c) => c.pass).length} check
-              {item.checks.filter((c) => c.pass).length > 1 ? "s" : ""} clear
+              {item.checks.filter((c) => c.pass).length} 项检查通过
               <span aria-hidden className="text-[10px] transition-transform group-open:rotate-90">▸</span>
             </summary>
             <div className="mt-2">
@@ -143,8 +142,8 @@ export function PlanItemCard({
 
       {savedReason && (
         <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink-2">
-          <span className="font-semibold text-ink">Your reason:</span> {savedReason}
-          <span className="ml-1 text-ink-muted">— the planner learns from this.</span>
+          <span className="font-semibold text-ink">你的原因：</span> {savedReason}
+          <span className="ml-1 text-ink-muted">· 之后的安排会参考这条反馈。</span>
         </p>
       )}
 
@@ -155,7 +154,7 @@ export function PlanItemCard({
             disabled={pending}
             className="btn-primary px-4 py-1.5 text-sm"
           >
-            {pending && !declining ? "Checking…" : "Accept"}
+            {pending && !declining ? "正在复核…" : "接受调整"}
           </button>
           {!declining ? (
             <button
@@ -163,7 +162,7 @@ export function PlanItemCard({
               disabled={pending}
               className="btn-ghost px-4 py-1.5 text-sm"
             >
-              Decline
+              不采用
             </button>
           ) : (
             <span className="flex flex-1 items-center gap-2">
@@ -171,7 +170,7 @@ export function PlanItemCard({
                 autoFocus
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Why not? The planner learns from this."
+                placeholder="可以说明原因，帮助后续安排更合适"
                 className="min-w-40 flex-1 rounded-full border border-hairline bg-page px-3 py-1.5 text-sm placeholder:text-ink-muted"
               />
               <button
@@ -179,7 +178,7 @@ export function PlanItemCard({
                 disabled={reason.trim() === "" || pending}
                 className="btn-ghost px-4 py-1.5 text-sm disabled:opacity-45"
               >
-                {pending ? "…" : "Send"}
+                {pending ? "…" : "提交"}
               </button>
             </span>
           )}

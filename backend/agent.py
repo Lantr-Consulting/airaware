@@ -130,7 +130,11 @@ Rules:
   coverage — say so if relevant, never guess a level.
 - Respect flexibility: never move a fixed activity's time.
 - Tone: practical and specific, not alarmist. Prefer better windows over
-  bans; highlight what's genuinely good about the day."""
+  bans; highlight what's genuinely good about the day.
+- Write every user-facing field (summary, title, rationale) in natural
+  Simplified Chinese. Keep JSON keys, activity IDs, kind enums, and HH:MM
+  times unchanged. Convert Fahrenheit values to Celsius in user-facing text;
+  you may use the feelsF input internally. Do not copy English source labels."""
 
 
 def _build_executor() -> AgentExecutor:
@@ -187,17 +191,16 @@ def run_plan(
         profile=advisor["profile"],
     )
 
-    prompt = f"Build the day plan for {date_iso}. The user's home is {home['name']}."
+    prompt = f"为 {date_iso} 生成今日安排。用户常住地是 {home['name']}。"
     if lessons:
         # The feedback loop: past declines are standing instructions, not
         # suggestions. Do not re-propose what the user already refused.
-        lines = "\n".join(f'- Declined "{l["title"]}" — their reason: "{l["reason"]}"' for l in lessons)
+        lines = "\n".join(f'- 用户拒绝了“{l["title"]}”，原因：“{l["reason"]}”' for l in lessons)
         prompt += (
-            "\n\nSTANDING LESSONS from this user's past declines. Do not propose "
-            "equivalents of these; respect the reasons:\n" + lines
+            "\n\n以下是用户过去拒绝建议后形成的长期偏好。请尊重原因，不要再次提出等同方案：\n" + lines
         )
     if steer:
-        prompt += "\n\nSTEERING NOTES the user left for this run:\n" + "\n".join(f"- {s}" for s in steer)
+        prompt += "\n\n用户为本次规划留下的补充要求：\n" + "\n".join(f"- {s}" for s in steer)
     result = _build_executor().invoke({"input": prompt})
     raw = _extract_json(result["output"])
 
@@ -225,7 +228,7 @@ def run_plan(
             "originalWindow": raw_item.get("originalWindow") if kind in ADJUSTMENT_KINDS else None,
             "severity": "info",
             "status": "proposed" if kind in ADJUSTMENT_KINDS else "auto",
-            "evidence": ["Hourly forecast + air quality, Open-Meteo (live)", "Exposure engine checks"],
+            "evidence": ["Open-Meteo 实时天气与空气质量", "环境暴露评估结果"],
         }
         items.append(exposure.annotate_item(item, hourly, activity, thresholds, profile))
 

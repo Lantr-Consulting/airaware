@@ -1,16 +1,13 @@
 "use client";
 
-/* Marketing landing at "/" — FORGE design language (matching lantr.site),
-   bilingual EN/中文. The product lives behind it under /today etc. */
+/* Marketing landing at "/" — FORGE design language (matching lantr.site).
+   The product lives behind it under /today etc. */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   ColumnRules,
-  LangToggle,
-  persistLang,
-  readLang,
   Reveal,
   Words,
   type Lang,
@@ -19,11 +16,11 @@ import {
 const COPY = {
   en: {
     nav: { features: "Features", how: "How it works", who: "Who it's for" },
-    hub: "All demos",
+    hub: "Student showcase",
     signIn: "Sign in",
     openApp: "Open the demo",
     openDash: "Open your planner",
-    badge: "A Lantr sample project · General guidance, not medical advice",
+    badge: "Past Lantr student project · Hosted demo · General guidance",
     h1: "An advisor that plans your week around the air outside.",
     subLead: "Tell it your schedule, your city, your sensitivities. ",
     subEm: "It plans your week around the sky",
@@ -85,15 +82,15 @@ const COPY = {
         b: "Briefings arrive on schedule, plans refresh when conditions change, and your declines become its lessons.",
       },
     ],
-    hoodKicker: "Under the hood",
-    hoodTitle: "Built milestone by milestone.",
+    hoodKicker: "How the student built it",
+    hoodTitle: "From a class idea to a live product.",
     hoodBody:
-      "First ship, design pass, brain, hands, memory, autonomy — built in the exact order Lantr students build theirs, with every milestone a public tag on GitHub.",
+      "This project was completed by a past Lantr student. The student shipped a small first version, then added live environmental data, the planning agent, cited exposure rules, accounts, memory, and scheduled briefings one working milestone at a time. Lantr now hosts the finished work for visitors to explore.",
     hoodLink: "Read the source on GitHub",
-    whoKicker: "Who it's for",
-    whoTitle: "The health & environment track sample.",
+    whoKicker: "The student's direction",
+    whoTitle: "An environmental-health question, taken all the way to launch.",
     whoBody:
-      "Lantr students build a project aimed at their intended major. This one shows what the health-and-environment direction looks like when it ships.",
+      "The student chose a question at the intersection of public health, environmental data, and software—and turned it into a product people can actually use.",
     who: [
       {
         t: "Public Health & Pre-Med",
@@ -111,105 +108,105 @@ const COPY = {
     ctaTitle: "See what today looks like, outside.",
     ctaBody: "Sign in once and you're signed in across every Lantr demo.",
     footerDisclaimer:
-      "General guidance, not medical advice. Runs on real public forecasts. Built as a Lantr sample project.",
+      "A past Lantr student project, hosted by Lantr for demonstration. General guidance, not medical advice. Runs on real public forecasts.",
     footerLinks: "More from Lantr",
   },
   zh: {
-    nav: { features: "功能", how: "运作方式", who: "适合谁" },
-    hub: "全部演示",
+    nav: { features: "主要功能", how: "使用流程", who: "作品方向" },
+    hub: "往届作品",
     signIn: "登录",
-    openApp: "进入演示",
-    openDash: "打开我的规划台",
-    badge: "Lantr 示范项目 · 一般性建议，非医疗建议",
-    h1: "一位懂天气、更懂你的户外健康顾问。",
-    subLead: "告诉它你的日程、城市和过敏源，",
-    subEm: "它围绕室外的空气规划你的一周",
+    openApp: "体验作品",
+    openDash: "打开活动安排",
+    badge: "Lantr 往届学生作品 · 使用公开环境数据 · 不代替医疗建议",
+    h1: "今天适不适合跑步？让天气和空气数据一起回答。",
+    subLead: "告诉它你住在哪、这周怎么安排、对什么比较敏感，",
+    subEm: "它会帮你找出更合适的活动时间",
     subRest:
-      "——阅读紫外线、高温、空气质量、花粉的真实预报，用 WHO、EPA、NWS 的健康分级为每个户外时段打分；天气一变，计划随之更新。",
-    ctaPrimary: "进入在线演示",
-    ctaSecondary: "免费创建账户",
+      "。产品会同时查看紫外线、气温、空气质量和花粉；预报有变化，安排也会跟着更新。",
+    ctaPrimary: "开始体验",
+    ctaSecondary: "注册体验账户",
     trust: [
-      "真实预报数据来自 Open-Meteo",
-      "WHO、EPA、NWS 健康分级，由代码强制执行",
-      "每条建议都亮出它通过的检查",
+      "使用公开环境预报数据",
+      "健康分级写成明确规则",
+      "每条建议都说明判断依据",
     ],
-    frameCaption: "产品实况：深色天空主题的规划工作台，接入真实大气数据。",
-    featuresKicker: "它能做什么",
-    featuresTitle: "一位会看天的规划师。",
+    frameCaption: "学生完成的产品界面：天气、空气质量和个人日程都放进同一个活动安排里。",
+    featuresKicker: "学生做了什么",
+    featuresTitle: "不是又一张天气预报，而是一份按你的日程生成的安排。",
     features: [
       {
-        t: "规划你的一周，而不是播报天气",
-        b: "它了解你的日程和活动——周二的晨跑、周末的远足——并围绕它们做规划，而不是递给你一份人人相同的天气预报。",
+        t: "先看你的安排，再看天气",
+        b: "产品会先了解你的日程和活动，例如周二晨跑、周末远足，再结合当天情况给建议，而不是只显示一份通用预报。",
       },
       {
-        t: "有出处的健康分级",
-        b: "紫外线、高温、空气质量、花粉，都由确定性暴露引擎打分——WHO 紫外线分级、NWS 体感温度、EPA AQI 断点——全部写在代码里，每一条都有出处。模型负责解释，代码负责决定。",
+        t: "每项判断都有依据",
+        b: "紫外线、高温、空气质量和花粉都按照公开标准判断。WHO、NWS 和 EPA 的分级写进了规则，页面上也能看到出处。",
       },
       {
-        t: "一键规划今天",
-        b: "轻轻一点，生成整天的计划：保持、挪时间、缩短、换地点、改室内、加装备，或抢占一个好时段——每一项的时间都可以再调整。",
+        t: "一键安排今天的户外活动",
+        b: "产品会建议保留原计划、换时间、缩短时长、改到室内或增加防护。每一项安排都可以继续调整。",
       },
       {
-        t: "接受前，先复核现实",
-        b: "你点下接受时，它会先用最新预报重新校验。如果空气质量在计划生成后变差了，你得到的是提醒，而不是一句过期的承诺。",
+        t: "确认前再查一遍最新预报",
+        b: "当你确认一项安排时，产品会重新读取最新数据。如果空气质量已经变差，会及时提醒，不会沿用过时的建议。",
       },
       {
-        t: "拒绝也是在教它",
-        b: "写明理由再拒绝——“午餐时间动不了”“我讨厌跑步机”——下一次规划前，它会先读完你的这些经验。",
+        t: "不合适，可以说明原因",
+        b: "如果某个建议不方便，可以告诉它原因，例如午休时间不能改。下次安排时，产品会把这些情况考虑进去。",
       },
       {
-        t: "你还没醒，简报已到",
-        b: "定时的早间与每周简报，加上条件跨入新分级时的即时提醒——为你的一天而写，不是为一座城市。",
+        t: "按时提醒，也会留意突然变化",
+        b: "可以收到每天或每周的提醒；当环境指标进入新的等级时，产品也会结合你的日程发出提示。",
       },
     ],
-    howKicker: "运作方式",
-    howTitle: "四个步骤，一个闭环。",
+    howKicker: "实际怎么用",
+    howTitle: "先了解你的情况，再安排每天的户外活动。",
     how: [
       {
-        t: "创建账户",
-        b: "你的顾问从一张白纸开始。三步欢迎流程，引导你完成激活。",
+        t: "注册账户",
+        b: "通过简单的引导填写基本信息，完成后再启用环境健康助手。",
       },
       {
-        t: "介绍你自己",
-        b: "过敏源、敏感项、常驻城市、每周节奏——用你的话描述，由它整理成档案，经你确认。",
+        t: "告诉它你的情况",
+        b: "填写所在城市、每周安排、过敏情况和特别在意的环境因素，确认无误后保存。",
       },
       {
-        t: "它规划你的一天",
-        b: "它对照预报检查你一天中的每个时段，交出一份把所有检查都摆在明面上的计划。",
+        t: "生成当天安排",
+        b: "产品会逐段检查当天的户外时间，并说明每项建议依据了哪些数据。",
       },
       {
-        t: "它持续守望",
-        b: "简报按时送达，天气一变计划就刷新，你的每次拒绝都成为它的经验。",
+        t: "根据变化及时调整",
+        b: "预报变化后可以重新安排；你提出的不便和偏好，也会在下次计划中得到考虑。",
       },
     ],
-    hoodKicker: "技术底层",
-    hoodTitle: "按里程碑逐步构建。",
+    hoodKicker: "作品是怎么完成的",
+    hoodTitle: "从第一版网页，一步步做到可以使用。",
     hoodBody:
-      "首次上线、设计打磨、大脑、双手、记忆、自主运行——与 Lantr 学员的构建路径完全一致，每个里程碑都是 GitHub 上公开的 tag。",
+      "这是一位 Lantr 往届学生完成的项目。学生先做出可以操作的第一版，再逐步接入公开环境数据、个人日程、判断规则、用户账户和定时提醒。课程结束后，Lantr 继续托管这件作品，供访客体验。",
     hoodLink: "在 GitHub 阅读源码",
-    whoKicker: "适合谁",
-    whoTitle: "健康与环境方向的示范作品。",
+    whoKicker: "学生为什么选择这个题目",
+    whoTitle: "把环境数据变成普通人当天就能用的安排。",
     whoBody:
-      "Lantr 学员会围绕自己的目标专业打造项目。这个项目展示了健康与环境方向做出来是什么样子。",
+      "学生关注的不是“天气是多少”，而是“今天什么时候更适合出门”。因此，这件作品没有停在数据展示，而是把公开标准、实时预报和个人日程放进了同一套产品。",
     who: [
       {
         t: "公共卫生与医学预科",
-        b: "真实阈值下的暴露科学——WHO 紫外线分级、NWS 体感温度、EPA AQI——不是论文里的引用，而是写成了代码。",
+        b: "把紫外线、体感温度和空气质量标准写进实际功能，而不只是在报告里引用。",
       },
       {
         t: "环境科学",
-        b: "实时大气数据管线——紫外线、空气质量、花粉——变成人们可以执行的决定。",
+        b: "处理紫外线、空气质量和花粉等公开数据，再把它们转成清楚的行动建议。",
       },
       {
         t: "计算机与人工智能",
-        b: "一个会调用工具的 LLM 智能体：记忆、反馈闭环、确定性护栏层——正经 AI 产品的架构。",
+        b: "让 AI 调用天气工具、记住用户偏好，同时用明确规则保证每项判断有据可查。",
       },
     ],
-    ctaTitle: "看看今天的室外，适合做什么。",
-    ctaBody: "登录一次，即可通行所有 Lantr 演示项目。",
+    ctaTitle: "看看今天什么时候更适合出门。",
+    ctaBody: "使用同一个体验账户，也可以继续查看另外两件往届学生作品。",
     footerDisclaimer:
-      "一般性建议，非医疗建议。基于公开真实预报数据。Lantr 示范项目。",
-    footerLinks: "更多 Lantr 项目",
+      "Lantr 往届学生作品，由 Lantr 继续托管。内容根据公开预报数据生成，只供日常参考，不代替医疗建议。",
+    footerLinks: "更多学生作品",
   },
 } as const;
 
@@ -237,7 +234,8 @@ function Mark({ size = 8 }: { size?: 7 | 8 }) {
 }
 
 /* A stylized still of the product — the sky-dark planner inside a window frame. */
-function ProductFrame() {
+function ProductFrame({ lang }: { lang: Lang }) {
+  const zh = lang === "zh";
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--lp-line-strong)] bg-[#0d1420] text-left shadow-[0_1px_2px_rgba(30,28,23,0.06),0_40px_80px_-40px_rgba(30,28,23,0.4)]">
       {/* window chrome */}
@@ -253,16 +251,16 @@ function ProductFrame() {
         {/* today pane */}
         <div className="bg-[#0d1420] p-5 sm:p-6">
           <div className="lp-mono text-[10px] uppercase tracking-[0.14em] text-[#7d8ea3]">
-            Today · Austin
+            {zh ? "今天 · 奥斯汀" : "Today · Austin"}
           </div>
           <div className="mt-2 text-3xl font-semibold tracking-tight text-[#eef4fb]">
-            96°F{" "}
+            36°C{" "}
             <span className="text-base font-medium text-[#7d8ea3]">
-              feels like
+              {zh ? "体感温度" : "feels like"}
             </span>
           </div>
           <div className="mt-1 text-sm font-medium text-[#4cc3ff]">
-            Best window: 7:00 – 9:00 AM
+            {zh ? "建议时间：上午 7:00—9:00" : "Best window: 7:00 – 9:00 AM"}
           </div>
           <svg
             viewBox="0 0 300 80"
@@ -298,10 +296,10 @@ function ProductFrame() {
           </svg>
           <div className="mt-4 flex flex-wrap gap-2">
             {[
-              ["UV 8 · High", "#ff9f5a"],
-              ["AQI 62 · Moderate", "#ffd166"],
-              ["Pollen 6.7 · Med", "#ffd166"],
-              ["Heat · Caution", "#ff9f5a"],
+              [zh ? "紫外线 8 · 高" : "UV 8 · High", "#ff9f5a"],
+              [zh ? "空气质量 62 · 良" : "AQI 62 · Moderate", "#ffd166"],
+              [zh ? "花粉 6.7 · 中等" : "Pollen 6.7 · Med", "#ffd166"],
+              [zh ? "高温 · 注意" : "Heat · Caution", "#ff9f5a"],
             ].map(([label, color]) => (
               <span
                 key={label as string}
@@ -316,26 +314,27 @@ function ProductFrame() {
         {/* plan pane */}
         <div className="bg-[#111a29] p-5 sm:p-6">
           <div className="lp-mono text-[10px] uppercase tracking-[0.14em] text-[#7d8ea3]">
-            Plan for today
+            {zh ? "今天的活动安排" : "Plan for today"}
           </div>
           <div className="mt-3 rounded-xl bg-[#182338] p-4">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-semibold text-[#eef4fb]">
-                Morning run
+                {zh ? "晨跑" : "Morning run"}
               </span>
               <span className="lp-mono text-[12px] text-[#a9b8cb]">
-                shift → 7:00 – 7:45 AM
+                {zh ? "调整到上午 7:00—7:45" : "shift → 7:00 – 7:45 AM"}
               </span>
             </div>
             <p className="mt-2 text-[12px] leading-relaxed text-[#a9b8cb]">
-              Beat the UV peak and the heat — the early window clears every
-              check except pollen, so take your antihistamine.
+              {zh
+                ? "早点出门可以避开紫外线和高温时段。花粉浓度仍然偏高，记得做好平时使用的防护。"
+                : "Beat the UV peak and the heat — the early window clears every check except pollen, so take your antihistamine."}
             </p>
             <ul className="mt-3 space-y-1.5">
               {[
-                ["ok", "UV below caution before 9 AM"],
-                ["ok", "AQI moderate — intensity OK"],
-                ["warn", "Pollen medium — grass allergy"],
+                ["ok", zh ? "上午 9 点前紫外线较低" : "UV below caution before 9 AM"],
+                ["ok", zh ? "空气质量中等，可以正常活动" : "AQI moderate — intensity OK"],
+                ["warn", zh ? "花粉浓度中等，注意草类过敏" : "Pollen medium — grass allergy"],
               ].map(([kind, c]) => (
                 <li
                   key={c}
@@ -375,15 +374,15 @@ function ProductFrame() {
             </ul>
             <div className="mt-4 flex gap-2">
               <span className="inline-flex flex-1 items-center justify-center rounded-full bg-[#4cc3ff] px-3 py-1.5 text-[12px] font-semibold text-[#04121c]">
-                Accept
+                {zh ? "采用" : "Accept"}
               </span>
               <span className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 px-3 py-1.5 text-[12px] font-medium text-[#a9b8cb]">
-                Decline
+                {zh ? "暂不采用" : "Decline"}
               </span>
             </div>
           </div>
           <p className="lp-mono mt-3 text-[10px] leading-relaxed text-[#5b6a7e]">
-            General guidance — not medical advice.
+            {zh ? "只供日常参考，不代替医疗建议。" : "General guidance — not medical advice."}
           </p>
         </div>
       </div>
@@ -392,20 +391,15 @@ function ProductFrame() {
 }
 
 export default function Landing() {
-  const [lang, setLang] = useState<Lang>("en");
+  const lang: Lang = "zh";
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    setLang(readLang());
+    document.documentElement.lang = "zh-CN";
     supabase.auth.getSession().then(({ data }) => {
       setSignedIn(Boolean(data.session));
     });
   }, []);
-
-  function switchLang(l: Lang) {
-    setLang(l);
-    persistLang(l);
-  }
 
   const c = COPY[lang];
 
@@ -438,7 +432,6 @@ export default function Landing() {
             </a>
           </nav>
           <div className="ml-auto flex items-center gap-2.5">
-            <LangToggle lang={lang} onChange={switchLang} />
             {signedIn ? (
               <Link href="/today" className="lp-btn h-9 px-4 text-[13px]">
                 {c.openDash}
@@ -463,45 +456,47 @@ export default function Landing() {
       {/* ── hero ─────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
         <ColumnRules />
-        <div className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-16 text-center sm:px-8 sm:pt-24">
-          <Reveal>
-            <span className="lp-mono inline-flex items-center gap-2 rounded-full border border-[var(--lp-line-strong)] bg-[var(--lp-surface)] px-4 py-2 text-[11px] font-medium text-[var(--lp-muted)]">
-              <span aria-hidden className="size-1.5 rounded-full bg-[var(--lp-accent)]" />
-              {c.badge}
-            </span>
-          </Reveal>
-          <h1 className="lp-display mx-auto mt-7 max-w-3xl text-balance text-[2.5rem] font-normal leading-[1.07] tracking-[-0.015em] text-[var(--lp-fg)] sm:text-[3.9rem]">
-            <Words text={c.h1} delay={120} />
-          </h1>
-          <Reveal delay={200}>
-            <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-relaxed text-[var(--lp-muted)] sm:text-lg">
-              {c.subLead}
-              <em className="lp-display italic text-[var(--lp-ink)]">{c.subEm}</em>
-              {c.subRest}
-            </p>
-          </Reveal>
-          <Reveal delay={280}>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/today" className="lp-btn h-12 px-6 text-[15px]">
-                {c.ctaPrimary} →
-              </Link>
-              <Link href="/signin" className="lp-btn-ghost h-12 px-6 text-[15px]">
-                {c.ctaSecondary}
-              </Link>
-            </div>
-          </Reveal>
-          <Reveal delay={360}>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[13px] text-[var(--lp-muted)]">
-              {c.trust.map((t) => (
-                <span key={t} className="flex items-center gap-2">
-                  <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--lp-accent)]" />
-                  {t}
-                </span>
-              ))}
-            </div>
-          </Reveal>
-          <Reveal delay={440} className="mx-auto mt-12 max-w-4xl">
-            <ProductFrame />
+        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-16 sm:px-8 sm:pt-20 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:pb-20">
+          <div>
+            <Reveal>
+              <span className="lp-mono inline-flex items-center gap-2 rounded-full border border-[var(--lp-line-strong)] bg-[var(--lp-surface)] px-4 py-2 text-[11px] font-medium text-[var(--lp-muted)]">
+                <span aria-hidden className="size-1.5 rounded-full bg-[var(--lp-accent)]" />
+                {c.badge}
+              </span>
+            </Reveal>
+            <h1 className="lp-display mt-7 max-w-3xl text-balance text-[2.6rem] font-normal leading-[1.04] tracking-[-0.02em] text-[var(--lp-fg)] sm:text-[4rem] lg:text-[3.8rem]">
+              <Words text={c.h1} delay={120} />
+            </h1>
+            <Reveal delay={200}>
+              <p className="mt-7 max-w-xl text-pretty text-base leading-relaxed text-[var(--lp-muted)] sm:text-lg">
+                {c.subLead}
+                <em className="lp-display italic text-[var(--lp-ink)]">{c.subEm}</em>
+                {c.subRest}
+              </p>
+            </Reveal>
+            <Reveal delay={280}>
+              <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row">
+                <Link href="/today" className="lp-btn h-12 px-6 text-[15px]">
+                  {c.ctaPrimary} →
+                </Link>
+                <Link href="/signin" className="lp-btn-ghost h-12 px-6 text-[15px]">
+                  {c.ctaSecondary}
+                </Link>
+              </div>
+            </Reveal>
+            <Reveal delay={360}>
+              <div className="mt-8 grid gap-2 text-[13px] text-[var(--lp-muted)]">
+                {c.trust.map((t) => (
+                  <span key={t} className="flex items-center gap-2">
+                    <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--lp-accent)]" />
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+          <Reveal delay={360} className="min-w-0 lg:-mr-14">
+            <ProductFrame lang={lang} />
             <p className="lp-mono mt-3 text-[11px] text-[var(--lp-faint)]">
               {c.frameCaption}
             </p>
@@ -694,7 +689,7 @@ export default function Landing() {
                 <ul className="mt-3 space-y-1.5 text-[13px] text-[var(--lp-muted)]">
                   <li>
                     <a href="https://lantr.site" className="hover:text-[var(--lp-fg)]">
-                      lantr.site — demo hub
+                      lantr.site — 学生作品展
                     </a>
                   </li>
                   <li>

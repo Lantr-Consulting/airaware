@@ -79,7 +79,7 @@ def ensure_advisor(user_id: str, email: str, defaults: dict, default_activities:
         "profile": defaults["profile"],
         "thresholds": defaults["thresholds"],
         "home_location": defaults["home"],
-        "units": "imperial",
+        "units": "metric",
         # New advisors start inactive: describe -> review -> explicit
         # Activate. Nothing plans until the user blesses it.
         "activated": False,
@@ -89,8 +89,8 @@ def ensure_advisor(user_id: str, email: str, defaults: dict, default_activities:
         create_activity(user_id, a)
     # Every new account starts with one sensible standing briefing.
     create_briefing(user_id, {
-        "title": "Morning briefing",
-        "prompt": "Summarize today: the day score if a plan exists, anything risky about my scheduled activities, what to wear or bring, and the single best outdoor window.",
+        "title": "晨间简报",
+        "prompt": "总结今天：如已有计划则说明当天评分，指出已安排活动的风险、需要穿戴或携带的物品，以及最适合户外活动的一个时段。",
         "cadence": "daily",
         "hourLocal": 7,
     })

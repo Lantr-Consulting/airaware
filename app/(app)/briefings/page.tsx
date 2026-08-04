@@ -17,16 +17,16 @@ import { useMe } from "@/lib/use-me";
 import type { Briefing, BriefingCadence, Signal } from "@/lib/types";
 
 function cadenceLabel(b: Briefing): string {
-  const hour = `${(b.hourLocal ?? 7) % 12 || 12} ${(b.hourLocal ?? 7) >= 12 ? "pm" : "am"}`;
+  const hour = `${String(b.hourLocal ?? 7).padStart(2, "0")}:00`;
   switch (b.cadence) {
     case "daily":
-      return `Daily · ${hour}`;
+      return `每天 · ${hour}`;
     case "weekly":
-      return `Weekly · Fri ${hour}`;
+      return `每周五 · ${hour}`;
     case "on_change":
-      return "On change";
+      return "条件变化时";
     default:
-      return "Manual";
+      return "仅手动";
   }
 }
 
@@ -50,12 +50,12 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 }
 
 const SIGNALS: { value: Signal; label: string }[] = [
-  { value: "aqi", label: "Air quality" },
+  { value: "aqi", label: "空气质量" },
   { value: "uv", label: "UV" },
-  { value: "heat", label: "Heat" },
-  { value: "pollen", label: "Pollen" },
+  { value: "heat", label: "体感温度" },
+  { value: "pollen", label: "花粉" },
 ];
-const SEVERITIES = ["Clear", "Easy", "Caution", "Avoid", "Extreme"];
+const SEVERITIES = ["适宜", "尚可", "注意", "避免", "极端"];
 
 const EMPTY_FORM = {
   title: "",
@@ -109,9 +109,9 @@ export default function BriefingsPage() {
       setItems((xs) => [...(xs ?? []), { ...created, pastRuns: [] }]);
       setForm(EMPTY_FORM);
       setAdding(false);
-      toast("success", `“${created.title}” is standing — the scheduler picks it up within a minute.`);
+      toast("success", `“${created.title}”已启用，调度器会在一分钟内接手。`);
     } catch {
-      toast("error", "Couldn't save the briefing.");
+      toast("error", "暂时无法保存简报。 ");
     } finally {
       setBusy(false);
     }
@@ -136,10 +136,10 @@ export default function BriefingsPage() {
     setItems((xs) => xs?.filter((x) => x.id !== b.id) ?? null);
     try {
       await deleteBriefing(b.id);
-      toast("info", `“${b.title}” removed.`);
+      toast("info", `“${b.title}”已删除。`);
     } catch {
       setItems(prev);
-      toast("error", "Couldn't delete — restored it.");
+      toast("error", "暂时无法删除，简报已恢复。 ");
     }
   }
 
@@ -163,9 +163,9 @@ export default function BriefingsPage() {
               : x
           ) ?? null
       );
-      toast("success", "Briefing ran — report below.");
+      toast("success", "简报已运行，结果如下。 ");
     } catch {
-      toast("error", "The briefing run failed — try again.");
+      toast("error", "本次简报运行失败，请稍后再试。 ");
     } finally {
       setRunningId(null);
     }
@@ -176,23 +176,21 @@ export default function BriefingsPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold tracking-tight">Briefings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">定时简报</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                 live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
-              {live ? "Live" : "Sample"}
+              {live ? "实时" : "演示"}
             </span>
           </div>
           <p className="mt-1 max-w-2xl text-sm text-ink-2">
-            Standing instructions the advisor runs on its own — every morning,
-            every week, or the moment a signal crosses a line you set. The
-            scheduler checks every minute.
+            让户外助手按每天、每周或环境指标越线时自动生成简报；调度器每分钟检查一次。
           </p>
           {signedOut && (
             <Link href="/signin" className="mt-1 inline-block text-xs font-medium text-accent hover:underline">
-              Sign in to set your own →
+              登录后设置你的简报 →
             </Link>
           )}
         </div>
@@ -201,24 +199,24 @@ export default function BriefingsPage() {
           disabled={!live}
           className="btn-primary px-4 py-2 text-sm disabled:opacity-45"
         >
-          {adding ? "Close" : "New briefing"}
+          {adding ? "收起" : "新建简报"}
         </button>
       </header>
 
       {adding && live && (
-        <Card title="New briefing">
+        <Card title="新建简报">
           <div className="flex flex-col gap-3">
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Title — e.g. Morning briefing"
+              placeholder="简报名称，例如：晨间简报"
               className="rounded-lg border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted"
             />
             <textarea
               value={form.prompt}
               onChange={(e) => setForm({ ...form, prompt: e.target.value })}
               rows={2}
-              placeholder="The standing instruction — e.g. Every morning, summarize the day and flag anything risky about my activities."
+              placeholder="长期要求，例如：每天早晨总结当天情况，并指出活动中的风险。"
               className="rounded-xl border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted"
             />
             <div className="flex flex-wrap items-center gap-3 text-sm text-ink-2">
@@ -227,14 +225,14 @@ export default function BriefingsPage() {
                 onChange={(e) => setForm({ ...form, cadence: e.target.value as BriefingCadence })}
                 className="rounded-lg border border-hairline bg-page px-3 py-2 text-sm"
               >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly (Fridays)</option>
-                <option value="on_change">On change</option>
-                <option value="manual">Manual only</option>
+                <option value="daily">每天</option>
+                <option value="weekly">每周五</option>
+                <option value="on_change">条件变化时</option>
+                <option value="manual">仅手动</option>
               </select>
               {(form.cadence === "daily" || form.cadence === "weekly") && (
                 <label className="flex items-center gap-2">
-                  at
+                  于
                   <input
                     type="number"
                     min={0}
@@ -243,12 +241,12 @@ export default function BriefingsPage() {
                     onChange={(e) => setForm({ ...form, hourLocal: Number(e.target.value) })}
                     className="w-16 rounded-lg border border-hairline bg-page px-2 py-2 text-sm"
                   />
-                  :00 local
+                  :00 当地时间
                 </label>
               )}
               {form.cadence === "on_change" && (
                 <>
-                  <span>when</span>
+                  <span>当</span>
                   <select
                     value={form.signal}
                     onChange={(e) => setForm({ ...form, signal: e.target.value as Signal })}
@@ -258,7 +256,7 @@ export default function BriefingsPage() {
                       <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
                   </select>
-                  <span>reaches</span>
+                  <span>达到</span>
                   <select
                     value={form.severity}
                     onChange={(e) => setForm({ ...form, severity: Number(e.target.value) })}
@@ -277,7 +275,7 @@ export default function BriefingsPage() {
                 disabled={busy || !form.title.trim() || !form.prompt.trim()}
                 className="btn-primary px-5 py-2 text-sm disabled:opacity-45"
               >
-                {busy ? "Saving…" : "Save briefing"}
+                {busy ? "正在保存…" : "保存简报"}
               </button>
             </div>
           </div>
@@ -294,8 +292,7 @@ export default function BriefingsPage() {
           {shown.length === 0 && (
             <Card>
               <p className="text-sm text-ink-2">
-                No standing briefings yet — create one and the advisor starts
-                working without you.
+                还没有定时简报。创建后，户外助手会按条件自动运行。
               </p>
             </Card>
           )}
@@ -311,7 +308,7 @@ export default function BriefingsPage() {
                     </span>
                     {b.trigger && (
                       <span className="rounded-full border border-hairline px-2.5 py-0.5 text-[11px] text-ink-muted">
-                        {SIGNALS.find((s) => s.value === b.trigger?.signal)?.label ?? b.trigger.signal} reaches{" "}
+                        {SIGNALS.find((s) => s.value === b.trigger?.signal)?.label ?? b.trigger.signal} 达到{" "}
                         {SEVERITIES[b.trigger.severity] ?? b.trigger.severity}+
                       </span>
                     )}
@@ -322,7 +319,7 @@ export default function BriefingsPage() {
                       disabled={!live || runningId !== null}
                       className="btn-ghost px-3.5 py-1.5 text-xs disabled:opacity-45"
                     >
-                      {runningId === b.id ? "Running…" : "Run now"}
+                      {runningId === b.id ? "正在运行…" : "立即运行"}
                     </button>
                     <Toggle on={enabled} onClick={() => toggle(b)} />
                     {live && (
@@ -330,7 +327,7 @@ export default function BriefingsPage() {
                         onClick={() => remove(b)}
                         className="text-xs text-ink-muted hover:text-critical"
                       >
-                        Delete
+                        删除
                       </button>
                     )}
                   </div>
@@ -343,7 +340,7 @@ export default function BriefingsPage() {
                 {b.latestReport && (
                   <div className="mt-4 rounded-xl bg-surface-2 p-4">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
-                      Latest report{b.lastRunAt ? ` · ${fmtDate(b.lastRunAt.slice(0, 10))}` : ""}
+                      最近报告{b.lastRunAt ? ` · ${fmtDate(b.lastRunAt.slice(0, 10))}` : ""}
                     </div>
                     <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-ink-2">
                       {b.latestReport.replace(/\*\*/g, "")}

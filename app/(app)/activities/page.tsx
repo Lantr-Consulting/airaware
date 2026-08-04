@@ -11,18 +11,18 @@ import { supabase } from "@/lib/supabase";
 import type { Activity, ActivityKind, Flexibility, Intensity } from "@/lib/types";
 
 const KIND_LABEL: Record<ActivityKind, string> = {
-  run: "Run",
-  commute: "Commute",
-  sport: "Sport",
-  hike: "Hike",
-  chores: "Chores",
-  volunteer: "Volunteer",
+  run: "跑步",
+  commute: "通勤",
+  sport: "运动训练",
+  hike: "徒步",
+  chores: "日常事务",
+  volunteer: "志愿活动",
 };
 
 const FLEX_LABEL: Record<Flexibility, string> = {
-  fixed: "Fixed time",
-  flex_time: "Time can move",
-  flex_day: "Day can move",
+  fixed: "时间固定",
+  flex_time: "时间可调整",
+  flex_day: "日期可调整",
 };
 
 const EMPTY_FORM = {
@@ -85,10 +85,10 @@ export default function ActivitiesPage() {
     setItems((xs) => xs.filter((x) => x.id !== a.id));
     try {
       await deleteActivity(a.id);
-      toast("info", `“${a.name}” removed from your week.`);
+      toast("info", `“${a.name}”已从每周活动中删除。`);
     } catch {
       setItems(prev);
-      toast("error", "Couldn't delete — restored it.");
+      toast("error", "暂时无法删除，活动已恢复。 ");
     }
   }
 
@@ -104,9 +104,9 @@ export default function ActivitiesPage() {
       setItems((xs) => [...xs, created].sort((a, b) => a.startTime.localeCompare(b.startTime)));
       setForm(EMPTY_FORM);
       setAdding(false);
-      toast("success", `“${created.name}” added — the planner sees it on its days.`);
+      toast("success", `“${created.name}”已添加，助手会在对应日期纳入规划。`);
     } catch {
-      toast("error", "Couldn't save the activity — try again.");
+      toast("error", "暂时无法保存活动，请稍后再试。 ");
     } finally {
       setBusy(false);
     }
@@ -117,23 +117,22 @@ export default function ActivitiesPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold tracking-tight">Activities</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">我的活动</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                 live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
-              {live ? "Live" : "Sample"}
+              {live ? "实时" : "演示"}
             </span>
           </div>
           <p className="mt-1 max-w-2xl text-sm text-ink-2">
-            The recurring shape of your week. Flexibility is what gives the
-            planner room to work: a movable run gets better windows; a fixed
-            practice gets warnings and gear instead.
+            记录每周固定活动，并说明哪些时间可以调整。可移动的活动会获得更合适的时段建议；
+            时间固定的活动则会收到风险和装备提醒。
           </p>
           {signedOut && (
             <Link href="/signin" className="mt-1 inline-block text-xs font-medium text-accent hover:underline">
-              Sign in to build your own week →
+              登录后设置你的每周活动 →
             </Link>
           )}
         </div>
@@ -142,21 +141,21 @@ export default function ActivitiesPage() {
           disabled={!live}
           className="btn-primary px-4 py-2 text-sm disabled:opacity-45"
         >
-          {adding ? "Close" : "Add activity"}
+          {adding ? "收起" : "添加活动"}
         </button>
       </header>
 
       {adding && live && (
-        <Card title="New activity">
+        <Card title="新活动">
           <div className="grid gap-3 sm:grid-cols-2">
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Name — e.g. Lunchtime walk"
+              placeholder="活动名称，例如：午休散步"
               className="rounded-lg border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted sm:col-span-2"
             />
             <label className="flex items-center justify-between gap-3 text-sm text-ink-2">
-              Kind
+              类型
               <select
                 value={form.kind}
                 onChange={(e) => setForm({ ...form, kind: e.target.value as ActivityKind })}
@@ -168,19 +167,19 @@ export default function ActivitiesPage() {
               </select>
             </label>
             <label className="flex items-center justify-between gap-3 text-sm text-ink-2">
-              Intensity
+              强度
               <select
                 value={form.intensity}
                 onChange={(e) => setForm({ ...form, intensity: e.target.value as Intensity })}
                 className="rounded-lg border border-hairline bg-page px-3 py-2 text-sm"
               >
-                <option value="low">Low</option>
-                <option value="moderate">Moderate</option>
-                <option value="high">High</option>
+                <option value="low">低</option>
+                <option value="moderate">中等</option>
+                <option value="high">高</option>
               </select>
             </label>
             <label className="flex items-center justify-between gap-3 text-sm text-ink-2">
-              Starts
+              开始时间
               <input
                 type="time"
                 value={form.startTime}
@@ -189,7 +188,7 @@ export default function ActivitiesPage() {
               />
             </label>
             <label className="flex items-center justify-between gap-3 text-sm text-ink-2">
-              Minutes
+              时长（分钟）
               <input
                 type="number"
                 min={10}
@@ -200,7 +199,7 @@ export default function ActivitiesPage() {
               />
             </label>
             <label className="flex items-center justify-between gap-3 text-sm text-ink-2">
-              Flexibility
+              可调整程度
               <select
                 value={form.flexibility}
                 onChange={(e) => setForm({ ...form, flexibility: e.target.value as Flexibility })}
@@ -214,7 +213,7 @@ export default function ActivitiesPage() {
             <input
               value={form.indoorAlternative}
               onChange={(e) => setForm({ ...form, indoorAlternative: e.target.value })}
-              placeholder="Indoor alternative (optional)"
+              placeholder="室内替代方案（选填）"
               className="rounded-lg border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted"
             />
             <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2">
@@ -246,7 +245,7 @@ export default function ActivitiesPage() {
               disabled={busy || !form.name.trim() || form.daysOfWeek.length === 0}
               className="btn-primary px-5 py-2 text-sm disabled:opacity-45"
             >
-              {busy ? "Saving…" : "Save activity"}
+              {busy ? "正在保存…" : "保存活动"}
             </button>
           </div>
         </Card>
@@ -259,7 +258,7 @@ export default function ActivitiesPage() {
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">{a.name}</div>
                 <div className="mt-0.5 text-xs text-ink-muted">
-                  {fmtDays(a.daysOfWeek)} · {fmtTime(a.startTime)} · {a.durationMin} min
+                  {fmtDays(a.daysOfWeek)} · {fmtTime(a.startTime)} · {a.durationMin} 分钟
                 </div>
               </div>
               <span className="rounded-full bg-ink/10 px-2.5 py-0.5 text-[11px] font-medium text-ink-2">
@@ -269,14 +268,14 @@ export default function ActivitiesPage() {
 
             <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-medium">
               <span className="rounded-full border border-hairline px-2.5 py-1 capitalize text-ink-2">
-                {a.intensity} intensity
+                {{ low: "低强度", moderate: "中等强度", high: "高强度" }[a.intensity]}
               </span>
               <span className="rounded-full border border-hairline px-2.5 py-1 text-ink-2">
                 {FLEX_LABEL[a.flexibility]}
               </span>
               {a.indoorAlternative && (
                 <span className="rounded-full border border-hairline px-2.5 py-1 text-ink-2">
-                  Indoor: {a.indoorAlternative}
+                  室内替代：{a.indoorAlternative}
                 </span>
               )}
             </div>
@@ -284,10 +283,10 @@ export default function ActivitiesPage() {
             {live && (
               <div className="mt-4 flex items-center gap-3 border-t border-hairline pt-3 text-xs">
                 <button onClick={() => toggle(a)} className="btn-ghost px-3 py-1">
-                  {a.enabled ? "Disable" : "Enable"}
+                  {a.enabled ? "停用" : "启用"}
                 </button>
                 <button onClick={() => remove(a)} className="text-ink-muted hover:text-critical">
-                  Delete
+                  删除
                 </button>
               </div>
             )}
@@ -296,9 +295,8 @@ export default function ActivitiesPage() {
       </div>
 
       <p className="text-xs text-ink-muted">
-        Intensity matters to the rules: a hard run at AQI 130 is not a picnic
-        at AQI 130. The exposure engine applies stricter cutoffs as effort goes
-        up.
+        活动强度会影响判断：AQI 同为 130 时，高强度跑步与轻松散步的风险并不相同；
+        强度越高，环境暴露评估采用的提醒标准越严格。
       </p>
     </div>
   );

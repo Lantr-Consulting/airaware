@@ -28,14 +28,14 @@ DEFAULT_ADVISOR = {
         "heatAvoidF": 103,
         "pollenCaution": 2,
     },
-    "home": {"name": "Austin, TX", "lat": 30.27, "lon": -97.74, "tz": "America/Chicago", "zip": "78701"},
+    "home": {"name": "美国 · 奥斯汀", "lat": 30.27, "lon": -97.74, "tz": "America/Chicago", "zip": "78701"},
 }
 
 # The starter week (camelCase — the shape db.create_activity accepts).
 DEFAULT_ACTIVITIES = [
-    {"name": "Morning run", "kind": "run", "daysOfWeek": [1, 3, 5], "startTime": "07:00", "durationMin": 45, "intensity": "high", "flexibility": "flex_time", "indoorAlternative": "Treadmill at the gym", "enabled": True},
-    {"name": "Bike commute", "kind": "commute", "daysOfWeek": [1, 2, 3, 4, 5], "startTime": "08:30", "durationMin": 25, "intensity": "moderate", "flexibility": "fixed", "enabled": True},
-    {"name": "Evening dog walk", "kind": "chores", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "startTime": "20:00", "durationMin": 30, "intensity": "low", "flexibility": "flex_time", "enabled": True},
+    {"name": "晨跑", "kind": "run", "daysOfWeek": [1, 3, 5], "startTime": "07:00", "durationMin": 45, "intensity": "high", "flexibility": "flex_time", "indoorAlternative": "健身房跑步机", "enabled": True},
+    {"name": "骑车通勤", "kind": "commute", "daysOfWeek": [1, 2, 3, 4, 5], "startTime": "08:30", "durationMin": 25, "intensity": "moderate", "flexibility": "fixed", "enabled": True},
+    {"name": "晚间遛狗", "kind": "chores", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "startTime": "20:00", "durationMin": 30, "intensity": "low", "flexibility": "flex_time", "enabled": True},
 ]
 
 

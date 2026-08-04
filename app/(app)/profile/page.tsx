@@ -7,10 +7,11 @@ import { useToast } from "@/components/toast";
 import { interpretProfile, patchSettings, searchCities } from "@/lib/api";
 import { ADVISOR } from "@/lib/mock";
 import { invalidateMe, useMe } from "@/lib/use-me";
+import { fmtTempF } from "@/lib/format";
 import type { AdvisorProfile, Location, Thresholds } from "@/lib/types";
 
 const SKIN_TYPES = ["", "I", "II", "III", "IV", "V", "VI"];
-const POLLEN_BANDS = ["Low", "Low–medium", "Medium", "Medium–high", "High"];
+const POLLEN_BANDS = ["低", "较低", "中等", "较高", "高"];
 
 function HomeEditor({
   home,
@@ -54,9 +55,9 @@ function HomeEditor({
       setEditing(false);
       setChosen(null);
       setQuery("");
-      toast("success", `Home set to ${loc.name} — plans now use its sky.`);
+      toast("success", `常住地已设为 ${loc.name}，之后的安排会采用当地环境数据。`);
     } catch {
-      toast("error", "Couldn't save your location — try again.");
+      toast("error", "暂时无法保存常住地，请稍后再试。 ");
     } finally {
       setSaving(false);
     }
@@ -65,11 +66,11 @@ function HomeEditor({
   if (!editing) {
     return (
       <div className="flex items-center justify-between gap-4 py-1">
-        <span className="text-ink-2">Home location</span>
+        <span className="text-ink-2">常住地</span>
         <span className="flex items-center gap-3">
           <span className="font-medium">{home.name}</span>
           <button onClick={() => setEditing(true)} className="btn-ghost px-3 py-1 text-xs">
-            Change
+            修改
           </button>
         </span>
       </div>
@@ -81,7 +82,7 @@ function HomeEditor({
   return (
     <div className="flex flex-col gap-2 py-1">
       <div className="flex items-center justify-between gap-4">
-        <span className="text-ink-2">Home location</span>
+        <span className="text-ink-2">常住地</span>
         <button
           onClick={() => {
             setEditing(false);
@@ -90,7 +91,7 @@ function HomeEditor({
           }}
           className="text-xs text-ink-muted hover:text-ink"
         >
-          Cancel
+          取消
         </button>
       </div>
       {!chosen ? (
@@ -99,7 +100,7 @@ function HomeEditor({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search any city…"
+            placeholder="搜索任意城市…"
             className="w-full rounded-lg border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted"
           />
           {results.length > 0 && (
@@ -130,22 +131,22 @@ function HomeEditor({
             <input
               value={zip}
               onChange={(e) => setZip(e.target.value)}
-              placeholder="ZIP (for pollen)"
+              placeholder="邮编（用于花粉）"
               className="w-32 rounded-lg border border-hairline bg-page px-3 py-1.5 text-sm placeholder:text-ink-muted"
             />
           )}
           <button onClick={save} disabled={saving} className="btn-primary px-4 py-1.5 text-sm">
-            {saving ? "Saving…" : "Save"}
+            {saving ? "正在保存…" : "保存"}
           </button>
           <button
             onClick={() => setChosen(null)}
             className="text-xs text-ink-muted hover:text-ink"
           >
-            Pick another
+            重新选择
           </button>
           {isUS && !zip && (
             <span className="w-full text-xs text-ink-muted">
-              No ZIP means pollen shows as “no coverage” — everything else still works.
+              不填写美国邮编时，花粉会显示“暂无数据”；其他环境数据仍可正常使用。
             </span>
           )}
         </div>
@@ -198,14 +199,14 @@ export default function ProfilePage() {
       if (live) {
         await patchSettings({ profile: nextProfile, thresholds: result.thresholds });
         invalidateMe();
-        toast("success", "Profile interpreted and saved — the limits below are now enforced.");
+        toast("success", "个人情况已整理并保存，下方提醒线已经生效。 ");
       } else {
-        setNotice("Interpreted (preview only — sign in to save it to your account).");
+        setNotice("已生成预览；登录后才能保存到你的账户。 ");
       }
       setProfile(nextProfile);
       setThresholds(result.thresholds);
     } catch {
-      toast("error", "The interpreter isn't reachable right now — nothing was changed.");
+      toast("error", "暂时无法连接解析服务，设置没有发生变化。 ");
     } finally {
       setInterpreting(false);
     }
@@ -218,9 +219,9 @@ export default function ProfilePage() {
       await patchSettings({ activated: true });
       setActivated(true);
       invalidateMe();
-      toast("success", "Advisor activated — go plan your day.");
+      toast("success", "户外助手已启用，可以开始规划今天。 ");
     } catch {
-      toast("error", "Couldn't activate — try again.");
+      toast("error", "暂时无法启用，请稍后再试。 ");
     } finally {
       setActivating(false);
     }
@@ -232,7 +233,7 @@ export default function ProfilePage() {
     if (live) {
       try {
         await patchSettings({ paused: next });
-        toast("info", next ? "Advisor paused." : "Advisor resumed.");
+        toast("info", next ? "户外助手已暂停。" : "户外助手已恢复。 ");
       } catch {
         setPaused(!next);
       }
@@ -240,15 +241,15 @@ export default function ProfilePage() {
   }
 
   const thresholdRows = [
-    { line: `Sun protection from UV ${thresholds.uvProtect}`, why: `Skin type ${SKIN_TYPES[profile.skinType]}` },
-    { line: `Move midday exposure at UV ${thresholds.uvAvoid}+`, why: "WHO very-high band" },
-    { line: `Flag hard efforts from AQI ${thresholds.aqiCaution}`, why: profile.asthma ? "Asthma" : profile.pollenAllergies.length ? "Pollen allergies" : "EPA guidance" },
-    { line: `Move outdoor plans indoors at AQI ${thresholds.aqiAvoid}+`, why: "EPA unhealthy-for-sensitive-groups" },
-    { line: `Caution from a feels-like of ${thresholds.heatCautionF}°F`, why: `Heat tolerance: ${profile.heatTolerance}` },
-    { line: `Reschedule at a feels-like of ${thresholds.heatAvoidF}°F+`, why: "NWS danger band" },
+    { line: `紫外线指数达到 ${thresholds.uvProtect} 时开始防护`, why: `皮肤类型 ${SKIN_TYPES[profile.skinType]}` },
+    { line: `紫外线指数达到 ${thresholds.uvAvoid} 时调整午间暴露`, why: "WHO 很高等级" },
+    { line: `AQI 达到 ${thresholds.aqiCaution} 时提醒高强度活动`, why: profile.asthma ? "哮喘" : profile.pollenAllergies.length ? "花粉过敏" : "EPA 指引" },
+    { line: `AQI 达到 ${thresholds.aqiAvoid} 时建议改到室内`, why: "EPA 敏感人群不健康等级" },
+    { line: `体感达到 ${fmtTempF(thresholds.heatCautionF)} 时提醒`, why: `高温耐受：${heatToleranceLabel(profile.heatTolerance)}` },
+    { line: `体感达到 ${fmtTempF(thresholds.heatAvoidF)} 时建议改期`, why: "NWS 危险等级" },
     {
-      line: `Pollen advice from ${POLLEN_BANDS[thresholds.pollenCaution]}`,
-      why: profile.pollenAllergies.length ? `Allergies: ${profile.pollenAllergies.join(", ")}` : "No pollen allergies",
+      line: `花粉达到“${POLLEN_BANDS[thresholds.pollenCaution]}”时开始提醒`,
+      why: profile.pollenAllergies.length ? `过敏原：${profile.pollenAllergies.map(allergenLabel).join("、")}` : "未记录花粉过敏",
     },
   ];
 
@@ -257,22 +258,21 @@ export default function ProfilePage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold tracking-tight">Profile & settings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">偏好与设置</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                 live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
-              {live ? "Live" : "Sample"}
+              {live ? "实时" : "演示"}
             </span>
           </div>
           <p className="mt-1 text-sm text-ink-2">
-            You describe yourself in plain English; the advisor turns it into
-            the limits below. Nothing changes without your say-so.
+            用自然语言描述你的个人情况，助手会整理成下方明确的提醒线；未经你确认，不会自动修改活动。
           </p>
           {signedOut && (
             <Link href="/signin" className="mt-1 inline-block text-xs font-medium text-accent hover:underline">
-              Sign in to make this profile yours →
+              登录后保存你的个人设置 →
             </Link>
           )}
         </div>
@@ -280,7 +280,7 @@ export default function ProfilePage() {
           {live && !activated ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-band-1/10 px-3 py-1 text-xs font-medium text-band-1">
               <span aria-hidden className="inline-block size-2 rounded-full bg-current" />
-              Not activated
+              尚未启用
             </span>
           ) : (
             <>
@@ -290,10 +290,10 @@ export default function ProfilePage() {
                 }`}
               >
                 <span aria-hidden className="inline-block size-2 rounded-full bg-current" />
-                {paused ? "Paused" : "Active"}
+                {paused ? "已暂停" : "运行中"}
               </span>
               <button onClick={togglePause} className="btn-ghost px-4 py-1.5 text-sm">
-                {paused ? "Resume" : "Pause"}
+                {paused ? "恢复" : "暂停"}
               </button>
             </>
           )}
@@ -304,61 +304,59 @@ export default function ProfilePage() {
         <Card className="border border-accent/30">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold tracking-tight">Review, then activate</h2>
+              <h2 className="text-sm font-semibold tracking-tight">确认后启用</h2>
               <p className="mt-1 max-w-xl text-sm text-ink-2">
-                Set your home below, describe yourself, and check the limits
-                table. When it looks like you, activate — nothing plans until
-                you do.
+                请设置常住地、描述个人情况并检查提醒线。确认准确后再启用；在此之前不会自动生成安排。
               </p>
             </div>
             <button onClick={activate} disabled={activating} className="btn-primary px-5 py-2 text-sm">
-              {activating ? "Activating…" : "Activate my advisor"}
+              {activating ? "正在启用…" : "启用户外助手"}
             </button>
           </div>
         </Card>
       )}
 
-      <Card title="How you described yourself">
+      <Card title="你的个人情况">
         <textarea
           value={about}
           onChange={(e) => setAbout(e.target.value)}
           rows={3}
-          placeholder="Allergies, skin, heat, kids, routines — plain English."
+          placeholder="可以写过敏情况、皮肤类型、高温耐受、是否有儿童同行，以及日常习惯。"
           className="w-full rounded-xl border border-hairline bg-page px-4 py-3 text-sm leading-relaxed text-ink-2 placeholder:text-ink-muted"
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-ink-muted">
-            {notice ?? "Describe yourself and press Interpret — the limits below update (and save, when signed in)."}
+            {notice ?? "写下个人情况并点击“整理为提醒线”；登录后会同步保存。"}
           </p>
           <button onClick={interpret} disabled={interpreting} className="btn-primary px-4 py-1.5 text-sm">
-            {interpreting ? "Interpreting…" : "Interpret"}
+            {interpreting ? "正在整理…" : "整理为提醒线"}
           </button>
         </div>
       </Card>
 
-      <Card title="Sensitivities">
+      <Card title="敏感因素">
         <div className="flex flex-wrap gap-2 text-[11px] font-medium">
           <span className="rounded-full border border-hairline px-3 py-1.5 text-ink-2">
-            Skin type {SKIN_TYPES[profile.skinType]}
+            皮肤类型 {SKIN_TYPES[profile.skinType]}
           </span>
           {profile.pollenAllergies.map((p) => (
             <span key={p} className="rounded-full border border-hairline px-3 py-1.5 capitalize text-ink-2">
-              {p} allergy
+              {allergenLabel(p)}过敏
             </span>
           ))}
           <span className="rounded-full border border-hairline px-3 py-1.5 capitalize text-ink-2">
-            Heat tolerance: {profile.heatTolerance}
+            高温耐受：{heatToleranceLabel(profile.heatTolerance)}
           </span>
           <span className="rounded-full border border-hairline px-3 py-1.5 text-ink-2">
-            Asthma: {profile.asthma ? "yes" : "no"}
+            哮喘：{profile.asthma ? "有" : "无"}
           </span>
           <span className="rounded-full border border-hairline px-3 py-1.5 text-ink-2">
-            Kid mode: {profile.kidMode ? "on" : "off"}
+            儿童同行：{profile.kidMode ? "有" : "无"}
           </span>
         </div>
       </Card>
 
-      <Card title="Your limits — what the engine enforces">
+      <Card title="提醒线 · 由系统强制执行">
         <ul className="flex flex-col divide-y divide-hairline">
           {thresholdRows.map((r) => (
             <li key={r.line} className="flex items-center justify-between gap-4 py-2.5 text-sm">
@@ -368,27 +366,56 @@ export default function ProfilePage() {
           ))}
         </ul>
         <p className="mt-3 text-xs text-ink-muted">
-          Every plan item shows which of these lines fired. Change one and the
-          engine changes with it — the rules live in code, not in a prompt.
+          每条安排都会说明触发了哪项提醒线。这些规则由代码执行，不依赖模型临场判断。
         </p>
       </Card>
 
-      <Card title="Home & units">
+      <Card title="地点与单位">
         <div className="flex flex-col gap-2 text-sm">
           {live ? (
             <HomeEditor home={home} onSaved={setHome} />
           ) : (
             <div className="flex items-center justify-between gap-4 py-1">
-              <span className="text-ink-2">Home location</span>
+              <span className="text-ink-2">常住地</span>
               <span className="font-medium">{home.name}</span>
             </div>
           )}
           <div className="flex items-center justify-between gap-4 border-t border-hairline py-1 pt-3">
-            <span className="text-ink-2">Units</span>
-            <span className="font-medium capitalize">{units}</span>
+            <span className="text-ink-2">显示单位</span>
+            <span className="font-medium">公制（摄氏度）</span>
           </div>
+        </div>
+      </Card>
+
+      <Card title="更多工具">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link href="/explore" className="rounded-xl border border-hairline px-4 py-3 hover:bg-ink/5">
+            <div className="text-sm font-medium">城市环境查询</div>
+            <p className="mt-1 text-xs text-ink-muted">比较不同城市的紫外线、空气质量、体感温度和花粉情况。</p>
+          </Link>
+          <Link href="/briefings" className="rounded-xl border border-hairline px-4 py-3 hover:bg-ink/5">
+            <div className="text-sm font-medium">定时简报</div>
+            <p className="mt-1 text-xs text-ink-muted">按每天、每周或指标变化自动生成环境提醒。</p>
+          </Link>
         </div>
       </Card>
     </div>
   );
+}
+
+function heatToleranceLabel(value: string) {
+  return { low: "较低", typical: "一般", high: "较高" }[value] ?? value;
+}
+
+function allergenLabel(value: string) {
+  return {
+    grass: "禾本科",
+    ragweed: "豚草",
+    birch: "桦树",
+    alder: "桤木",
+    mugwort: "艾蒿",
+    olive: "橄榄树",
+    tree: "树木",
+    weed: "杂草",
+  }[value] ?? value;
 }

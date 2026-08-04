@@ -9,52 +9,52 @@ Pollen.com index bands.
 
 def uv_band(uv: float) -> tuple[str, int]:
     if uv < 3:
-        return "Low", 0
+        return "低", 0
     if uv < 6:
-        return "Moderate", 1
+        return "中等", 1
     if uv < 8:
-        return "High", 2
+        return "高", 2
     if uv < 11:
-        return "Very high", 3
-    return "Extreme", 4
+        return "很高", 3
+    return "极高", 4
 
 
 def aqi_band(aqi: float) -> tuple[str, int]:
     if aqi <= 50:
-        return "Good", 0
+        return "优", 0
     if aqi <= 100:
-        return "Moderate", 1
+        return "良", 1
     if aqi <= 150:
-        return "Unhealthy for sensitive groups", 2
+        return "对敏感人群不健康", 2
     if aqi <= 200:
-        return "Unhealthy", 3
+        return "不健康", 3
     if aqi <= 300:
-        return "Very unhealthy", 4
-    return "Hazardous", 4
+        return "非常不健康", 4
+    return "危险", 4
 
 
 def heat_band(apparent_f: float) -> tuple[str, int]:
     if apparent_f < 80:
-        return "Comfortable", 0
+        return "舒适", 0
     if apparent_f < 90:
-        return "Caution", 1
+        return "注意", 1
     if apparent_f < 103:
-        return "Extreme caution", 2
+        return "需要格外注意", 2
     if apparent_f < 125:
-        return "Danger", 3
-    return "Extreme danger", 4
+        return "危险", 3
+    return "极度危险", 4
 
 
 def pollen_band(index: float) -> tuple[str, int]:
     if index < 2.5:
-        return "Low", 0
+        return "低", 0
     if index < 4.9:
-        return "Low–medium", 1
+        return "较低", 1
     if index < 7.3:
-        return "Medium", 2
+        return "中等", 2
     if index < 9.7:
-        return "Medium–high", 3
-    return "High", 4
+        return "较高", 3
+    return "高", 4
 
 
 def pollen_reading(index: float, top_allergens: list[str]) -> dict:

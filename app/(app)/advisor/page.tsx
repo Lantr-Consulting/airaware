@@ -100,7 +100,7 @@ export default function AdvisorPage() {
             id: "greet",
             threadId: "new",
             role: "assistant",
-            content: `Hi! I can see the live sky over **${me.homeLocation.name}**, your limits, and today's plan. Ask about timing, gear, or air quality.`,
+            content: `你好！我可以查看 **${me.homeLocation.name}** 的实时环境、你的个人提醒线和今日安排。可以问我活动时段、装备准备或空气质量。`,
             createdAt: "",
           },
         ]
@@ -164,7 +164,7 @@ export default function AdvisorPage() {
           threadId: tid,
           role: "assistant",
           content:
-            "I can't reach the advisor backend right now, so I won't guess at live conditions. Try again in a moment.",
+            "暂时无法连接环境服务，我不会猜测实时条件。请稍后再试。",
           createdAt: "",
         },
       ]);
@@ -178,22 +178,21 @@ export default function AdvisorPage() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="mb-4">
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold tracking-tight">Advisor</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">环境问答</h1>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                 live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
               }`}
             >
-              {live ? "Live" : "Sample"}
+              {live ? "实时" : "演示"}
             </span>
           </div>
           <p className="mt-1 text-sm text-ink-2">
-            Ask anything about your plan or the conditions behind it. Every
-            answer cites the same numbers the engine checked.
+            可以询问活动安排及其背后的环境条件；回答会引用评估时使用的同一组数据。
           </p>
           {signedOut && (
             <Link href="/signin" className="mt-1 inline-block text-xs font-medium text-accent hover:underline">
-              Sign in for an advisor that knows your week →
+              登录后让助手了解你的每周安排 →
             </Link>
           )}
         </header>
@@ -204,7 +203,7 @@ export default function AdvisorPage() {
           ))}
           {thinking && (
             <div className="self-start rounded-2xl bg-surface px-4 py-3 text-sm text-ink-muted">
-              Checking the sky…
+              正在查看环境数据…
             </div>
           )}
         </div>
@@ -212,9 +211,9 @@ export default function AdvisorPage() {
         {live && messages.length <= 1 && !thinking && (
           <div className="mb-2 flex flex-wrap gap-2">
             {[
-              "What's my best outdoor window today?",
-              "Do I need sunscreen right now?",
-              "How's the air for a hard run?",
+              "今天最适合户外活动的时段是什么？",
+              "现在需要防晒吗？",
+              "当前空气质量适合高强度跑步吗？",
             ].map((q) => (
               <button
                 key={q}
@@ -231,11 +230,11 @@ export default function AdvisorPage() {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Can I run at lunch? What about the hike Saturday?"
+            placeholder="午休时间适合跑步吗？周六徒步应该怎么安排？"
             className="flex-1 rounded-full border border-hairline bg-surface px-4 py-2.5 text-sm placeholder:text-ink-muted"
           />
           <button onClick={() => send()} disabled={thinking} className="btn-primary px-5 py-2.5 text-sm">
-            Send
+            发送
           </button>
         </div>
       </div>
@@ -245,16 +244,16 @@ export default function AdvisorPage() {
         {live ? (
           <>
             <Card
-              title="Conversations"
+              title="对话记录"
               action={
                 <button onClick={() => openThread(null)} className="btn-ghost px-2.5 py-0.5 text-[11px]">
-                  New
+                  新对话
                 </button>
               }
             >
               <ul className="flex flex-col gap-1">
                 {threads.length === 0 && (
-                  <li className="text-sm text-ink-muted">Nothing yet — say hi.</li>
+                  <li className="text-sm text-ink-muted">还没有对话，可以先问一个问题。</li>
                 )}
                 {threads.map((t) => (
                   <li key={t.id}>
@@ -272,7 +271,7 @@ export default function AdvisorPage() {
                 ))}
               </ul>
             </Card>
-            <Card title="Today at a glance">
+            <Card title="今日概览">
               {livePlan ? (
                 <>
                   <div className="flex items-baseline gap-2">
@@ -282,7 +281,7 @@ export default function AdvisorPage() {
                     >
                       {livePlan.dayScore}
                     </span>
-                    <span className="text-xs text-ink-muted">day score</span>
+                    <span className="text-xs text-ink-muted">今日适宜度</span>
                   </div>
                   <p className="mt-2 text-sm leading-relaxed text-ink-2">
                     {livePlan.summary.length > 160
@@ -290,14 +289,14 @@ export default function AdvisorPage() {
                       : livePlan.summary}
                   </p>
                   <Link href="/today" className="mt-3 block text-xs font-medium text-accent hover:underline">
-                    Open today&apos;s plan →
+                    打开今日安排 →
                   </Link>
                 </>
               ) : (
                 <>
-                  <p className="text-sm leading-relaxed text-ink-2">No plan for today yet.</p>
+                  <p className="text-sm leading-relaxed text-ink-2">今天还没有生成安排。</p>
                   <Link href="/today" className="mt-2 block text-xs font-medium text-accent hover:underline">
-                    Plan my day →
+                    生成今日安排 →
                   </Link>
                 </>
               )}
@@ -305,7 +304,7 @@ export default function AdvisorPage() {
           </>
         ) : (
           <>
-            <Card title="Conversations">
+            <Card title="对话记录">
               <ul className="flex flex-col gap-1">
                 {THREADS.map((t) => (
                   <li key={t.id}>
@@ -323,9 +322,9 @@ export default function AdvisorPage() {
                 ))}
               </ul>
             </Card>
-            <Card title="Latest plan run">
+            <Card title="最近一次规划">
               <p className="text-sm leading-relaxed text-ink-2">{PLAN_RUNS[0].report}</p>
-              <p className="mt-2 text-xs text-ink-muted">Ran at 6:02 am · today + tomorrow</p>
+              <p className="mt-2 text-xs text-ink-muted">06:02 运行 · 覆盖今天和明天</p>
             </Card>
           </>
         )}
