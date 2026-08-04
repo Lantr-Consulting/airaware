@@ -399,7 +399,11 @@ export default function Landing() {
 
   useEffect(() => {
     const languageTimer = window.setTimeout(() => {
-      const savedLanguage = readLang();
+      const requestedLanguage = new URLSearchParams(window.location.search).get("lang");
+      const savedLanguage = requestedLanguage === "en" || requestedLanguage === "zh"
+        ? requestedLanguage
+        : readLang();
+      if (requestedLanguage === "en" || requestedLanguage === "zh") persistLang(savedLanguage);
       setLang(savedLanguage);
       document.documentElement.lang = savedLanguage === "zh" ? "zh-CN" : "en";
     }, 0);
@@ -412,6 +416,9 @@ export default function Landing() {
   function switchLang(next: Lang) {
     setLang(next);
     persistLang(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", next);
+    window.history.replaceState(null, "", url);
     document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
   }
 
