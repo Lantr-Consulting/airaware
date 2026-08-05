@@ -83,7 +83,7 @@ def write_report(user_id: str, advisor: dict, briefing: dict, language: str = "z
                 language_rule=(
                     "Write in natural English and use Fahrenheit in user-facing text."
                     if language == "en"
-                    else "Write in natural Simplified Chinese and convert Fahrenheit to Celsius in user-facing text."
+                    else "Write in idiomatic Simplified Chinese as a native Chinese health-and-lifestyle product would; avoid literal English translation patterns and convert Fahrenheit to Celsius in user-facing text."
                 )
             ) + "\n\nCONTEXT " + json.dumps(context)},
             {"role": "user", "content": ("Standing briefing instruction: " if language == "en" else "长期简报要求：") + briefing["prompt"][:800]},

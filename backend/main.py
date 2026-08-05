@@ -61,7 +61,7 @@ def _request_language(request: Request) -> str:
 def _language_rule(language: str) -> str:
     if language == "en":
         return "Write every user-facing field in natural English and use Fahrenheit."
-    return "Write every user-facing field in natural Simplified Chinese and convert Fahrenheit to Celsius."
+    return "Write every user-facing field in idiomatic Simplified Chinese as a native Chinese health-and-lifestyle product would; avoid literal English translation patterns and convert Fahrenheit to Celsius."
 
 
 @app.get("/health")
@@ -582,7 +582,7 @@ class InterpretRequest(BaseModel):
     text: str
 
 
-INTERPRET_SYSTEM = """You turn a person's plain-English description of their life,
+INTERPRET_SYSTEM = """You turn a person's description of their life,
 health sensitivities, and preferences into AirAware's profile + thresholds JSON.
 
 Rules:
@@ -601,9 +601,9 @@ Rules:
   kidMode -> heatCautionF 90, heatAvoidF 100; typical -> 95/103; high -> 98/107.
   uvAvoid 8 unless they say they burn instantly (then 6).
 - Be conservative when unsure; never invent medical conditions they didn't state.
-- Write the profile.notes field in natural Simplified Chinese. Keep internal
-  enum values and JSON keys exactly as specified. The user's Chinese terms for
-  allergens should still be mapped to the allowed English enum values.
+- Follow the per-request language instruction appended below for profile.notes.
+  Keep internal enum values and JSON keys exactly as specified. Terms for
+  allergens in any language must still map to the allowed English enum values.
 """
 
 
@@ -719,12 +719,12 @@ Hard rules:
   AQI, temperature, or pollen level that is not in it. If pollen is null, say
   there is no pollen coverage for this location — never guess.
 - Reference the user's own thresholds when relevant, from the THRESHOLDS JSON
-  if given. Convert Fahrenheit source values to Celsius in the reply.
+  if given. Use the units required by the final per-request language instruction.
 - You are general guidance, not medical advice; if asked for diagnosis or
   treatment, say so and suggest a clinician.
 - Prefer giving a better time window over saying "no".
 - Keep replies under 180 words. Use **bold** for the key numbers.
-- Always answer in natural Simplified Chinese. Do not diagnose, recommend
+- Follow the final per-request language instruction. Do not diagnose, recommend
   medication, or present general guidance as medical advice.
 """
 

@@ -210,7 +210,7 @@ def run_plan(
         "language_rule": (
             "Write every user-facing field (summary, title, rationale) in natural English and use Fahrenheit."
             if language == "en"
-            else "Write every user-facing field (summary, title, rationale) in natural Simplified Chinese and convert Fahrenheit to Celsius."
+            else "Write every user-facing field (summary, title, rationale) in idiomatic Simplified Chinese as a native Chinese health-and-lifestyle product would; avoid literal English translation patterns and convert Fahrenheit to Celsius."
         ),
     })
     raw = _extract_json(result["output"])
