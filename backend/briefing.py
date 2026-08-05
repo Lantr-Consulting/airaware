@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 from openai import OpenAI
 
 import db
+import demo
 import env as environment
 import store
 from bands import aqi_band, heat_band, uv_band
@@ -151,6 +152,8 @@ def scheduler_tick(now_utc: datetime | None = None) -> int:
     for b in db.all_enabled_briefings():
         try:
             uid = b["user_id"]
+            if demo.is_demo_user_id(uid):
+                continue
             if uid not in advisors:
                 row = db.get_advisor(uid)
                 advisors[uid] = db.advisor_out(row) if row else None

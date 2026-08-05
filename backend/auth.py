@@ -8,6 +8,7 @@ first sample — this file is deliberately identical in shape.
 
 import os
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 import requests as http
@@ -38,7 +39,17 @@ def current_user(authorization: str = Header(default="")) -> dict[str, Any]:
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="登录状态无效或已过期，请重新登录")
     body = r.json()
-    user = {"id": body["id"], "email": body.get("email", "")}
+    metadata = body.get("user_metadata") or {}
+    if metadata.get("demo_kind") == "lantr-private-demo":
+        try:
+            expires = datetime.fromisoformat(
+                str(metadata.get("demo_expires_at", "")).replace("Z", "+00:00")
+            )
+            if expires <= datetime.now(timezone.utc):
+                raise HTTPException(status_code=401, detail="这次演示已经结束，请重新开始")
+        except ValueError:
+            raise HTTPException(status_code=401, detail="演示登录状态无效，请重新开始")
+    user = {"id": body["id"], "email": body.get("email", ""), "metadata": metadata}
     _cache[token] = (time.time(), user)
     if len(_cache) > 500:
         _cache.clear()

@@ -23,6 +23,7 @@ load_dotenv()  # must run before auth/db read SUPABASE_* at import time
 
 import auth  # noqa: E402
 import db  # noqa: E402
+import demo  # noqa: E402
 import env as environment  # noqa: E402
 import exposure  # noqa: E402
 import store  # noqa: E402
@@ -32,7 +33,13 @@ app = FastAPI(title="AirAware backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3100"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3100",
+        "https://airaware.lantr.site",
+        "https://lantr.site",
+        "https://www.lantr.site",
+    ],
     allow_origin_regex=r"https://airaware-[a-z0-9-]+\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,6 +69,35 @@ def health():
     return {"ok": True, "llm": llm is not None}
 
 
+class DemoSessionRequest(BaseModel):
+    language: str = "zh"
+    code: str | None = None
+
+
+@app.get("/demo/config")
+def demo_config():
+    return demo.config()
+
+
+@app.post("/demo/session")
+def demo_session(req: DemoSessionRequest, request: Request):
+    return demo.create_session(
+        request,
+        language="en" if req.language == "en" else "zh",
+        code=req.code,
+    )
+
+
+@app.get("/demo/status")
+def demo_status(user: dict = Depends(auth.current_user)):
+    return demo.status(user)
+
+
+@app.post("/demo/reset")
+def demo_reset(request: Request, user: dict = Depends(auth.current_user)):
+    return demo.reset_session(request, user)
+
+
 @app.get("/conditions")
 def conditions(
     lat: float = Query(...),
@@ -87,14 +123,72 @@ def conditions_search(q: str = Query(..., min_length=2)):
 
 # ---------- Account (Milestone 5: one advisor per user, rows in Supabase) ----------
 
+def _demo_seed(language: str) -> tuple[dict, list[dict]]:
+    if language == "en":
+        advisor = {
+            "profile": {"asthma": False, "pollenAllergies": ["grass", "ragweed"],
+                        "skinType": 2, "heatTolerance": "typical", "kidMode": False,
+                        "notes": "Training for a 10K. Prefers mornings after 6:30 and needs a real dog walk every evening."},
+            "thresholds": {"uvProtect": 3, "uvAvoid": 8, "aqiCaution": 100,
+                           "aqiAvoid": 150, "heatCautionF": 95, "heatAvoidF": 103,
+                           "pollenCaution": 2},
+            "home": {"name": "Austin, TX", "lat": 30.27, "lon": -97.74,
+                     "tz": "America/Chicago", "zip": "78701"},
+        }
+        activities = [
+            {"name": "Morning run", "kind": "run", "daysOfWeek": [1, 3, 5], "startTime": "07:00", "durationMin": 45, "intensity": "high", "flexibility": "flex_time", "indoorAlternative": "Treadmill at the gym", "enabled": True},
+            {"name": "Bike commute", "kind": "commute", "daysOfWeek": [1, 2, 3, 4, 5], "startTime": "08:30", "durationMin": 25, "intensity": "moderate", "flexibility": "fixed", "enabled": True},
+            {"name": "Evening dog walk", "kind": "chores", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "startTime": "20:00", "durationMin": 30, "intensity": "low", "flexibility": "flex_time", "enabled": True},
+        ]
+        return advisor, activities
+    advisor = {
+        "profile": {"asthma": False, "pollenAllergies": ["grass", "ragweed"],
+                    "skinType": 2, "heatTolerance": "typical", "kidMode": False,
+                    "notes": "正在为 10 公里跑步做准备。更喜欢早晨，但不希望早于 6:30；每天晚上都要遛狗。"},
+        "thresholds": {"uvProtect": 3, "uvAvoid": 8, "aqiCaution": 100,
+                       "aqiAvoid": 150, "heatCautionF": 95, "heatAvoidF": 103,
+                       "pollenCaution": 2},
+        "home": {"name": "美国 · 奥斯汀", "lat": 30.27, "lon": -97.74,
+                 "tz": "America/Chicago", "zip": "78701"},
+    }
+    activities = [
+        {"name": "晨跑", "kind": "run", "daysOfWeek": [1, 3, 5], "startTime": "07:00", "durationMin": 45, "intensity": "high", "flexibility": "flex_time", "indoorAlternative": "健身房跑步机", "enabled": True},
+        {"name": "骑车通勤", "kind": "commute", "daysOfWeek": [1, 2, 3, 4, 5], "startTime": "08:30", "durationMin": 25, "intensity": "moderate", "flexibility": "fixed", "enabled": True},
+        {"name": "晚间遛狗", "kind": "chores", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "startTime": "20:00", "durationMin": 30, "intensity": "low", "flexibility": "flex_time", "enabled": True},
+    ]
+    return advisor, activities
+
+
 def _me(user: dict) -> dict:
-    row = db.ensure_advisor(user["id"], user["email"], store.DEFAULT_ADVISOR, store.DEFAULT_ACTIVITIES)
+    if demo.is_demo_user(user):
+        defaults, activities = _demo_seed(demo.language_for(user))
+    else:
+        defaults, activities = store.DEFAULT_ADVISOR, store.DEFAULT_ACTIVITIES
+    row = db.ensure_advisor(user["id"], user["email"], defaults, activities)
+    if demo.is_demo_user(user):
+        if not row["activated"]:
+            row = db.update_advisor(user["id"], {"activated": True})
+        language = demo.language_for(user)
+        for briefing in db.list_briefings(user["id"]):
+            fields = {"enabled": False} if briefing["enabled"] else {}
+            if briefing["title"] in ("晨间简报", "Morning briefing"):
+                fields.update({
+                    "title": "Morning briefing" if language == "en" else "晨间简报",
+                    "prompt": (
+                        "Summarize today: include the day score if a plan exists, flag risks for scheduled activities, list useful gear, and name the best outdoor window."
+                        if language == "en" else
+                        "总结今天：如已有计划则说明当天评分，指出已安排活动的风险、需要穿戴或携带的物品，以及最适合户外活动的一个时段。"
+                    ),
+                })
+            if fields:
+                db.update_briefing(user["id"], briefing["id"], fields)
     return db.advisor_out(row)
 
 
 @app.get("/me")
 def me(user: dict = Depends(auth.current_user)):
-    return {**_me(user), "email": user["email"]}
+    return {**_me(user), "email": user["email"],
+            "demo": demo.status(user) if demo.is_demo_user(user) else {"isDemo": False}}
 
 
 class SettingsRequest(BaseModel):
@@ -291,6 +385,7 @@ def plan_generate(req: GenerateRequest, request: Request, user: dict = Depends(a
         raise HTTPException(status_code=409, detail="请先确认个人情况和提醒线，再启用户外助手")
     if advisor["paused"]:
         raise HTTPException(status_code=409, detail="户外助手当前已暂停")
+    demo.consume_ai_action(user)
     today = store.today_local(advisor["homeLocation"]["tz"])
     date_iso = req.date or today
     if date_iso != today:
@@ -431,6 +526,8 @@ def briefings_create(req: BriefingRequest, user: dict = Depends(auth.current_use
         raise HTTPException(status_code=400, detail="不支持这个运行频率")
     fields = req.model_dump()
     fields["hourLocal"] = max(0, min(23, fields["hourLocal"]))
+    if demo.is_demo_user(user):
+        fields["enabled"] = False
     row = db.create_briefing(user["id"], fields)
     return db.briefing_out(row)
 
@@ -440,6 +537,8 @@ def briefings_update(briefing_id: str, req: BriefingPatch, user: dict = Depends(
     fields = req.model_dump(exclude_none=True)
     if "cadence" in fields and fields["cadence"] not in VALID_CADENCES:
         raise HTTPException(status_code=400, detail="不支持这个运行频率")
+    if demo.is_demo_user(user) and "enabled" in fields:
+        fields["enabled"] = False
     row = db.update_briefing(user["id"], briefing_id, fields)
     if row is None:
         raise HTTPException(status_code=404, detail="没有找到这份简报")
@@ -459,6 +558,7 @@ def briefings_run(briefing_id: str, request: Request, user: dict = Depends(auth.
     row = db.get_briefing(user["id"], briefing_id)
     if row is None:
         raise HTTPException(status_code=404, detail="没有找到这份简报")
+    demo.consume_ai_action(user)
     advisor = _me(user)
     import briefing as briefing_engine
 
@@ -508,9 +608,10 @@ Rules:
 
 
 @app.post("/interpret-profile")
-def interpret_profile(req: InterpretRequest, request: Request):
+def interpret_profile(req: InterpretRequest, request: Request, user: dict = Depends(auth.current_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="解析模型尚未配置")
+    demo.consume_ai_action(user)
     resp = llm.chat.completions.create(
         model=MODEL,
         messages=[
@@ -629,46 +730,45 @@ Hard rules:
 
 
 @app.post("/chat")
-def chat(req: ChatRequest, request: Request, user: dict | None = Depends(optional_user)):
+def chat(req: ChatRequest, request: Request, user: dict = Depends(auth.current_user)):
     if llm is None:
         raise HTTPException(status_code=503, detail="问答模型尚未配置")
+    demo.consume_ai_action(user)
 
     language = _request_language(request)
 
     # Signed in: the server's records are the truth — location, profile,
     # thresholds, and today's plan come from the user's own rows.
     thread_id: str | None = None
-    if user is not None:
-        advisor = _me(user)
-        home = advisor["homeLocation"]
-        req.location = ChatLocation(name=home["name"], lat=home["lat"], lon=home["lon"], zip=home.get("zip"))
-        req.profile = advisor["profile"]
-        req.thresholds = advisor["thresholds"]
-        thread_id = req.threadId
-        if thread_id is None:
-            thread_id = db.create_thread(
-                user["id"], req.message.strip()[:48] or ("New conversation" if language == "en" else "新对话")
-            )["id"]
-            req.history = []
-        else:
-            req.history = [ChatMessage(**m) for m in (
-                {"role": m["role"], "content": m["content"]}
-                for m in db.list_messages(user["id"], thread_id)
-            )]
-        db.add_message(user["id"], thread_id, "user", req.message.strip()[:2000])
+    advisor = _me(user)
+    home = advisor["homeLocation"]
+    req.location = ChatLocation(name=home["name"], lat=home["lat"], lon=home["lon"], zip=home.get("zip"))
+    req.profile = advisor["profile"]
+    req.thresholds = advisor["thresholds"]
+    thread_id = req.threadId
+    if thread_id is None:
+        thread_id = db.create_thread(
+            user["id"], req.message.strip()[:48] or ("New conversation" if language == "en" else "新对话")
+        )["id"]
+        req.history = []
+    else:
+        req.history = [ChatMessage(**m) for m in (
+            {"role": m["role"], "content": m["content"]}
+            for m in db.list_messages(user["id"], thread_id)
+        )]
+    db.add_message(user["id"], thread_id, "user", req.message.strip()[:2000])
 
     context_parts = []
-    if user is not None:
-        plan = db.get_plan(user["id"], store.today_local(advisor["homeLocation"]["tz"]))
-        if plan:
-            context_parts.append("TODAYS_PLAN " + json.dumps({
-                "dayScore": plan["dayScore"],
-                "summary": plan["summary"],
-                "items": [
-                    {"kind": i["kind"], "title": i["title"], "status": i["status"], "window": i.get("window")}
-                    for i in plan["items"]
-                ],
-            }))
+    plan = db.get_plan(user["id"], store.today_local(advisor["homeLocation"]["tz"]))
+    if plan:
+        context_parts.append("TODAYS_PLAN " + json.dumps({
+            "dayScore": plan["dayScore"],
+            "summary": plan["summary"],
+            "items": [
+                {"kind": i["kind"], "title": i["title"], "status": i["status"], "window": i.get("window")}
+                for i in plan["items"]
+            ],
+        }))
     if req.location is not None:
         try:
             cond = environment.fetch_conditions(
@@ -713,7 +813,7 @@ def chat(req: ChatRequest, request: Request, user: dict | None = Depends(optiona
 
     resp = llm.chat.completions.create(model=MODEL, messages=messages, temperature=0.6)
     reply = resp.choices[0].message.content
-    if user is not None and thread_id is not None:
+    if thread_id is not None:
         db.add_message(user["id"], thread_id, "assistant", reply)
         db.touch_thread(user["id"], thread_id)
     return {"reply": reply, "threadId": thread_id}

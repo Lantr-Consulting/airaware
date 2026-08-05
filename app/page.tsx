@@ -21,7 +21,7 @@ const COPY = {
     nav: { features: "Features", how: "How it works", who: "Who it's for" },
     hub: "Student showcase",
     signIn: "Sign in",
-    openApp: "Open the demo",
+    openApp: "Try the demo",
     openDash: "Open your planner",
     badge: "Past Lantr student project · Hosted demo · General guidance",
     h1: "An advisor that plans your week around the air outside.",
@@ -29,8 +29,8 @@ const COPY = {
     subEm: "It plans your week around the sky",
     subRest:
       " — reading real forecasts for UV, heat, air quality, and pollen, scoring every outdoor window against cited WHO, EPA & NWS health bands, and re-planning when conditions change.",
-    ctaPrimary: "Explore the live demo",
-    ctaSecondary: "Create a free account",
+    ctaPrimary: "Start a private demo",
+    ctaSecondary: "Sign in",
     trust: [
       "Real forecasts from Open-Meteo",
       "Health bands from WHO, EPA & NWS — enforced in code",
@@ -69,8 +69,8 @@ const COPY = {
     howTitle: "Four steps, one loop.",
     how: [
       {
-        t: "Create an account",
-        b: "Your advisor starts blank and inactive. A three-step welcome walks you through activating it.",
+        t: "Open your private demo",
+        b: "A seeded personal schedule opens instantly—no signup or shared credentials.",
       },
       {
         t: "Tell it about you",
@@ -109,7 +109,7 @@ const COPY = {
       },
     ],
     ctaTitle: "See what today looks like, outside.",
-    ctaBody: "Sign in once and you're signed in across every Lantr demo.",
+    ctaBody: "No signup. Your schedule stays private and clears automatically after 24 hours.",
     footerDisclaimer:
       "A past Lantr student project, hosted by Lantr for demonstration. General guidance, not medical advice. Runs on real public forecasts.",
     footerLinks: "More from Lantr",
@@ -118,7 +118,7 @@ const COPY = {
     nav: { features: "主要功能", how: "使用流程", who: "作品方向" },
     hub: "往届作品",
     signIn: "登录",
-    openApp: "体验作品",
+    openApp: "互动体验",
     openDash: "打开活动安排",
     badge: "Lantr 往届学生作品 · 使用公开环境数据 · 不代替医疗建议",
     h1: "今天适不适合跑步？让天气和空气数据一起回答。",
@@ -126,8 +126,8 @@ const COPY = {
     subEm: "它会帮你找出更合适的活动时间",
     subRest:
       "。产品会同时查看紫外线、气温、空气质量和花粉；预报有变化，安排也会跟着更新。",
-    ctaPrimary: "开始体验",
-    ctaSecondary: "注册体验账户",
+    ctaPrimary: "开始专属演示",
+    ctaSecondary: "登录账户",
     trust: [
       "使用公开环境预报数据",
       "健康分级写成明确规则",
@@ -166,8 +166,8 @@ const COPY = {
     howTitle: "先了解你的情况，再安排每天的户外活动。",
     how: [
       {
-        t: "注册账户",
-        b: "通过简单的引导填写基本信息，完成后再启用环境健康助手。",
+        t: "直接进入专属演示",
+        b: "无需注册，系统会立即准备一份可以修改的个人日程和环境偏好。",
       },
       {
         t: "告诉它你的情况",
@@ -206,7 +206,7 @@ const COPY = {
       },
     ],
     ctaTitle: "看看今天什么时候更适合出门。",
-    ctaBody: "使用同一个体验账户，也可以继续查看另外两件往届学生作品。",
+    ctaBody: "无需注册，所有修改只有你能看到，并会在 24 小时后自动清除。",
     footerDisclaimer:
       "Lantr 往届学生作品，由 Lantr 继续托管。内容根据公开预报数据生成，只供日常参考，不代替医疗建议。",
     footerLinks: "更多学生作品",
@@ -466,7 +466,7 @@ export default function Landing() {
                 >
                   {c.signIn}
                 </Link>
-                <Link href="/today" className="lp-btn h-9 px-4 text-[13px]">
+                <Link href="/demo" className="lp-btn h-9 px-4 text-[13px]">
                   {c.openApp}
                 </Link>
               </>
@@ -498,7 +498,7 @@ export default function Landing() {
             </Reveal>
             <Reveal delay={280}>
               <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row">
-                <Link href="/today" className="lp-btn h-12 px-6 text-[15px]">
+                <Link href="/demo" className="lp-btn h-12 px-6 text-[15px]">
                   {c.ctaPrimary} →
                 </Link>
                 <Link href="/signin" className="lp-btn-ghost h-12 px-6 text-[15px]">
@@ -679,7 +679,7 @@ export default function Landing() {
             </Reveal>
             <Reveal delay={140}>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="/today" className="lp-btn h-12 px-6 text-[15px]">
+                <Link href="/demo" className="lp-btn h-12 px-6 text-[15px]">
                   {c.ctaPrimary} →
                 </Link>
                 <Link
