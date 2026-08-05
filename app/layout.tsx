@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
 
@@ -39,11 +40,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <head>
-        {/* Stamp the saved theme before first paint — no flash. */}
-        <script
+        <Script
+          id="airaware-preferences"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html:
-              `try{var t=localStorage.getItem("aa-theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}`,
+              `try{var t=localStorage.getItem("aa-theme");if(t==="light")document.documentElement.dataset.theme="light";var l=document.cookie.match(/(?:^|; )lantr-lang=(en|zh)/)?.[1]||localStorage.getItem("lantr-lang");document.documentElement.lang=l==="en"?"en":"zh-CN"}catch(e){}`,
           }}
         />
       </head>
