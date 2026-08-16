@@ -24,91 +24,91 @@ const COPY = {
     openApp: "Try the demo",
     openDash: "Open your planner",
     badge: "Past Lantr student project · Hosted demo · General guidance",
-    h1: "An advisor that plans your week around the air outside.",
-    subLead: "Tell it your schedule, your city, your sensitivities. ",
-    subEm: "It plans your week around the sky",
+    h1: "Plan outdoor time around the day’s UV, heat, air quality, and pollen.",
+    subLead: "Add your city, schedule, and sensitivities. ",
+    subEm: "AirAware checks each outdoor plan",
     subRest:
-      " — reading real forecasts for UV, heat, air quality, and pollen, scoring every outdoor window against cited WHO, EPA & NWS health bands, and re-planning when conditions change.",
+      " against live forecasts and public guidance from WHO, EPA, and NWS. When the conditions change, it helps you find a better time.",
     ctaPrimary: "Start a private demo",
     ctaSecondary: "Sign in",
     trust: [
       "Real forecasts from Open-Meteo",
-      "Health bands from WHO, EPA & NWS — enforced in code",
+      "Health bands from WHO, EPA & NWS guide each check",
       "Every suggestion shows its checks",
     ],
-    frameCaption: "The product: a sky-dark planner on real atmospheric data.",
+    frameCaption: "The student’s finished planner, using live environmental data.",
     featuresKicker: "What it does",
-    featuresTitle: "A planner that reads the sky.",
+    featuresTitle: "A forecast you can plan around",
     features: [
       {
-        t: "Your week, not a generic forecast",
-        b: "It knows your schedule and your activities — the Tuesday run, the weekend hike — and plans around them, instead of handing you the same forecast as everyone else.",
+        t: "Built around your actual week",
+        b: "Add the Tuesday run, the weekend hike, or the evening dog walk. AirAware checks the conditions for the time and place of each activity.",
       },
       {
-        t: "Cited health bands",
-        b: "UV, heat, air quality, and pollen are scored by a deterministic exposure engine — WHO UV bands, NWS heat index, EPA AQI breakpoints — in pure code with citable sources. The LLM narrates; the code decides.",
+        t: "Health guidance with sources",
+        b: "UV, heat, air quality, and pollen are checked against published bands, including WHO UV levels, the NWS heat index, and EPA AQI breakpoints. The source appears beside each result.",
       },
       {
-        t: "Plan my day",
-        b: "One tap files a full day plan: keep, shift, shorten, relocate, move indoors, add gear, or claim a good window — each with an editable time slot.",
+        t: "A practical plan for the day",
+        b: "AirAware can keep an activity, move it, shorten it, take it indoors, suggest protection, or point out a better window. Every time slot remains editable.",
       },
       {
-        t: "Accepting re-checks reality",
-        b: "When you accept an item, it re-validates against the latest forecast first. If air quality worsened since the plan was made, you get a warning — not a stale promise.",
+        t: "A fresh check before you save",
+        b: "When you accept a suggestion, AirAware reads the latest forecast again. If the air quality or weather has worsened, it warns you and updates the plan.",
       },
       {
-        t: "Declining teaches it",
-        b: "Decline with a reason — “lunch is fixed”, “I hate treadmills” — and the next plan reads your lessons before it drafts.",
+        t: "Feedback it can remember",
+        b: "If a suggestion does not work, say why: “lunch is fixed” or “I hate treadmills,” for example. AirAware keeps that in mind for the next plan.",
       },
       {
-        t: "Briefings while you sleep",
-        b: "Scheduled morning and weekly briefings, plus on-change alerts when conditions cross into a new band — written for your day, not a city of millions.",
+        t: "Briefings for your schedule",
+        b: "Set a morning or weekly briefing, and get an extra alert when conditions move into a new band. Each update focuses on the activities already on your calendar.",
       },
     ],
     howKicker: "How it works",
-    howTitle: "Four steps, one loop.",
+    howTitle: "Add your schedule and let the forecast shape the plan.",
     how: [
       {
         t: "Open your private demo",
-        b: "A seeded personal schedule opens instantly—no signup or shared credentials.",
+        b: "A private sample schedule opens instantly, ready for you to change and explore.",
       },
       {
         t: "Tell it about you",
-        b: "Allergies, sensitivities, home city, weekly rhythm — described in your words, interpreted into a profile you approve.",
+        b: "Add your home city, usual week, allergies, and sensitivities, then review the profile AirAware creates.",
       },
       {
         t: "It plans your day",
-        b: "It checks every window of your day against the forecast and files a plan with its checks laid out in the open.",
+        b: "It checks each outdoor window against the forecast and shows the readings behind every suggestion.",
       },
       {
-        t: "It keeps watch",
-        b: "Briefings arrive on schedule, plans refresh when conditions change, and your declines become its lessons.",
+        t: "Keep the plan up to date",
+        b: "Briefings arrive when you choose, plans refresh with the forecast, and your feedback shapes the next suggestion.",
       },
     ],
     hoodKicker: "How the student built it",
-    hoodTitle: "From a class idea to a live product.",
+    hoodTitle: "The student started with one useful daily decision.",
     hoodBody:
-      "This project was completed by a past Lantr student. The student shipped a small first version, then added live environmental data, the planning agent, cited exposure rules, accounts, memory, and scheduled briefings one working milestone at a time. Lantr now hosts the finished work for visitors to explore.",
+      "A past Lantr student began by helping someone choose a better time for one outdoor activity. Live environmental data, planning tools, published health bands, user accounts, memory, and scheduled briefings were added as the project grew. Lantr now hosts the finished work for visitors to explore.",
     hoodLink: "Read the source on GitHub",
     whoKicker: "The student's direction",
-    whoTitle: "An environmental-health question, taken all the way to launch.",
+    whoTitle: "A practical project built around environmental health.",
     whoBody:
-      "The student chose a question at the intersection of public health, environmental data, and software—and turned it into a product people can actually use.",
+      "The student wanted to know when environmental data becomes useful in an ordinary day. Answering that question brought public health, live forecasts, and software into the same product.",
     who: [
       {
         t: "Public Health & Pre-Med",
-        b: "Exposure science with real thresholds — WHO UV bands, NWS heat index, EPA AQI — implemented in code, not just cited in a paper.",
+        b: "WHO UV bands, the NWS heat index, and EPA AQI thresholds become checks people can see and use.",
       },
       {
         t: "Environmental Science",
-        b: "Live atmospheric data pipelines — UV, air quality, pollen — turned into decisions people can act on.",
+        b: "Live UV, air-quality, and pollen feeds become practical choices about timing and protection.",
       },
       {
         t: "Computer Science & AI",
-        b: "A tool-using LLM agent with memory, feedback loops, and a deterministic guardrail layer — the architecture serious AI products use.",
+        b: "The AI reads forecast tools and remembers feedback, while a separate rules layer handles the health-band checks.",
       },
     ],
-    ctaTitle: "See what today looks like, outside.",
+    ctaTitle: "Check the best outdoor window in today’s forecast.",
     ctaBody: "No signup. Your schedule stays private and clears automatically after 24 hours.",
     footerDisclaimer:
       "A past Lantr student project, hosted by Lantr for demonstration. General guidance, not medical advice. Runs on real public forecasts.",
@@ -121,11 +121,11 @@ const COPY = {
     openApp: "互动体验",
     openDash: "打开活动安排",
     badge: "Lantr 往届学生作品 · 使用公开环境数据 · 不代替医疗建议",
-    h1: "今天适不适合跑步？让天气和空气数据一起回答。",
+    h1: "今天几点适合跑步？AirAware 会把天气、空气和你的日程放在一起看。",
     subLead: "告诉它你住在哪、这周怎么安排、对什么比较敏感，",
-    subEm: "它会帮你找出更合适的活动时间",
+    subEm: "AirAware 会逐项检查你的户外安排",
     subRest:
-      "。产品会同时查看紫外线、气温、空气质量和花粉；预报有变化，安排也会跟着更新。",
+      "，同时查看紫外线、气温、空气质量和花粉。预报有变化，安排也会跟着更新。",
     ctaPrimary: "开始专属演示",
     ctaSecondary: "登录账户",
     trust: [
@@ -135,11 +135,11 @@ const COPY = {
     ],
     frameCaption: "学生完成的产品界面：天气、空气质量和个人日程都放进同一个活动安排里。",
     featuresKicker: "学生做了什么",
-    featuresTitle: "不是又一张天气预报，而是一份按你的日程生成的安排。",
+    featuresTitle: "把天气预报放进你的日程里。",
     features: [
       {
-        t: "先看你的安排，再看天气",
-        b: "产品会先了解你的日程和活动，例如周二晨跑、周末远足，再结合当天情况给建议，而不是只显示一份通用预报。",
+        t: "围绕你真实的一周来安排",
+        b: "把周二晨跑、周末远足或每天遛狗加进日程，产品会检查每项活动所在时间和地点的环境情况。",
       },
       {
         t: "每项判断都有依据",
@@ -150,8 +150,8 @@ const COPY = {
         b: "产品会建议保留原计划、换时间、缩短时长、改到室内或增加防护。每一项安排都可以继续调整。",
       },
       {
-        t: "确认前再查一遍最新预报",
-        b: "当你确认一项安排时，产品会重新读取最新数据。如果空气质量已经变差，会及时提醒，不会沿用过时的建议。",
+        t: "确认前再查一次最新预报",
+        b: "当你确认一项安排时，产品会重新读取最新数据。如果空气质量已经变差，它会提醒你并更新建议。",
       },
       {
         t: "不合适，可以说明原因",
@@ -163,7 +163,7 @@ const COPY = {
       },
     ],
     howKicker: "实际怎么用",
-    howTitle: "先了解你的情况，再安排每天的户外活动。",
+    howTitle: "填好日程，让最新预报帮你调整安排。",
     how: [
       {
         t: "直接进入专属演示",
@@ -183,18 +183,18 @@ const COPY = {
       },
     ],
     hoodKicker: "作品是怎么完成的",
-    hoodTitle: "从第一版网页，一步步做到可以使用。",
+    hoodTitle: "学生从一天里最实用的选择开始做。",
     hoodBody:
-      "这是一位 Lantr 往届学生完成的项目。学生先做出可以操作的第一版，再逐步接入公开环境数据、个人日程、判断规则、用户账户和定时提醒。课程结束后，Lantr 继续托管这件作品，供访客体验。",
+      "这位 Lantr 往届学生最先解决的问题很具体：帮用户为一项户外活动选个更合适的时间。随着项目推进，公开环境数据、个人日程、判断规则、用户账户和定时提醒陆续加入。课程结束后，Lantr 继续托管这件作品，供访客体验。",
     hoodLink: "在 GitHub 阅读源码",
     whoKicker: "学生为什么选择这个题目",
-    whoTitle: "把环境数据变成普通人当天就能用的安排。",
+    whoTitle: "这个项目把环境健康落到了每天的安排里。",
     whoBody:
-      "学生关注的不是“天气是多少”，而是“今天什么时候更适合出门”。因此，这件作品没有停在数据展示，而是把公开标准、实时预报和个人日程放进了同一套产品。",
+      "学生想知道，实时预报怎样才能真正帮人决定几点出门。于是，公开标准、环境数据和个人日程被放进了同一套产品。",
     who: [
       {
         t: "公共卫生与医学预科",
-        b: "把紫外线、体感温度和空气质量标准写进实际功能，而不只是在报告里引用。",
+        b: "把紫外线、体感温度和空气质量标准写成用户看得见的检查结果。",
       },
       {
         t: "环境科学",
@@ -331,7 +331,7 @@ function ProductFrame({ lang }: { lang: Lang }) {
             <p className="mt-2 text-[12px] leading-relaxed text-[#a9b8cb]">
               {zh
                 ? "早点出门可以避开紫外线和高温时段。花粉浓度仍然偏高，记得做好平时使用的防护。"
-                : "Beat the UV peak and the heat — the early window clears every check except pollen, so take your antihistamine."}
+                : "Going earlier avoids the highest UV and heat. Pollen remains elevated, so follow your usual protection plan."}
             </p>
             <ul className="mt-3 space-y-1.5">
               {[

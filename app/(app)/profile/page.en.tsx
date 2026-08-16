@@ -368,8 +368,8 @@ export default function ProfilePage() {
           ))}
         </ul>
         <p className="mt-3 text-xs text-ink-muted">
-          Every plan item shows which of these lines fired. Change one and the
-          engine changes with it — the rules live in code, not in a prompt.
+          Every plan item shows which limits were triggered. These checks run
+          in regular code, so changing a limit updates every future plan.
         </p>
       </Card>
 

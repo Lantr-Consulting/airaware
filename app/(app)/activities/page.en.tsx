@@ -296,9 +296,8 @@ export default function ActivitiesPage() {
       </div>
 
       <p className="text-xs text-ink-muted">
-        Intensity matters to the rules: a hard run at AQI 130 is not a picnic
-        at AQI 130. The exposure engine applies stricter cutoffs as effort goes
-        up.
+        The exposure engine uses stricter cutoffs as effort goes up, so the
+        same AQI can lead to different guidance for a hard run and a picnic.
       </p>
     </div>
   );

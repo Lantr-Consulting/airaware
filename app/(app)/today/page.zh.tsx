@@ -44,7 +44,7 @@ function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: 
   }
 
   const steps = [
-    { href: "/profile", title: "设置常住地", detail: "之后的建议会采用你所在地的预报，而不是演示城市。", done: false },
+    { href: "/profile", title: "设置常住地", detail: "之后的建议会采用你所在地的预报。", done: false },
     { href: "/profile", title: "说明个人情况", detail: "过敏、皮肤、高温耐受和儿童同行等信息，会转换成明确的提醒线。", done: hasNotes },
     { href: "/activities", title: "确认每周活动", detail: "我们准备了一组示例活动，你可以按实际情况修改。", done: false },
   ];

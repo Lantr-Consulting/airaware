@@ -221,7 +221,7 @@ export default function ExplorePage() {
             <div className="font-medium">紫外线指数（WHO）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
               0—2 低 · 3—5 中等 · 6—7 高 · 8—10 很高 · 11 以上极高。
-              从中等级别开始就应考虑防护；阴天也不能替代防晒。
+              从中等级别开始就应考虑防护；即使是阴天，紫外线也可能达到这个级别。
             </p>
           </div>
           <div>

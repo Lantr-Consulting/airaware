@@ -255,7 +255,7 @@ export const PLANS: DayPlan[] = [
         kind: "warning",
         title: "Danger-band heat, 2–5 pm",
         rationale:
-          "Feels-like peaks at 106°F — NWS Danger category. Anything strenuous outdoors in this window is a bad trade. Hydrate ahead of the evening, not during it.",
+          "Feels-like peaks at 106°F — NWS Danger category. Anything strenuous outdoors in this window is a bad trade. Start hydrating before the evening and keep water with you.",
         window: { start: "14:00", end: "17:00" },
         checks: [
           { rule: "heat_index", detail: "Feels like 106°F — Danger band, above your 103°F avoid line", value: 106, band: "Danger", thresholdSource: "nws_heat", pass: false },
@@ -420,7 +420,7 @@ export const MESSAGES: Message[] = [
     threadId: "t2",
     role: "assistant",
     content:
-      "Yes — clouds are not sunscreen. This morning was **70% cloud cover but still UV 4 (Moderate)**; up to ~80% of UV gets through typical cloud. Your protect-at-UV-3 rule (skin type II) fired on the actual reading, not on how the sky looked.",
+      "Yes. This morning had **70% cloud cover and a UV reading of 4 (Moderate)**; up to ~80% of UV can pass through typical cloud. Your skin type II profile recommends protection from UV 3, so today’s reading crossed that line.",
     createdAt: "2026-07-29T18:22:00",
   },
 ];

@@ -222,7 +222,8 @@ export default function ExplorePage() {
             <div className="font-medium">UV index (WHO)</div>
             <p className="mt-1 leading-relaxed text-ink-2">
               0–2 Low · 3–5 Moderate · 6–7 High · 8–10 Very high · 11+ Extreme.
-              Protection starts mattering at Moderate — clouds are not sunscreen.
+              Protection starts mattering at Moderate, and cloud cover can
+              still leave UV at that level.
             </p>
           </div>
           <div>

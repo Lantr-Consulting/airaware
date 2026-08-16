@@ -366,7 +366,7 @@ export default function ProfilePage() {
           ))}
         </ul>
         <p className="mt-3 text-xs text-ink-muted">
-          每条安排都会说明触发了哪项提醒线。这些规则由代码执行，不依赖模型临场判断。
+          每条安排都会说明触发了哪项提醒线。这些检查都写在代码里，修改提醒线后，之后的安排也会一起更新。
         </p>
       </Card>
 

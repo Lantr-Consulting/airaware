@@ -44,7 +44,7 @@ function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: 
   }
 
   const steps = [
-    { href: "/profile", title: "Set your home location", detail: "Plans use your sky, not our demo city.", done: false },
+    { href: "/profile", title: "Set your home location", detail: "Plans will use the forecast for your area.", done: false },
     { href: "/profile", title: "Describe yourself", detail: "Allergies, skin, heat, kids — plain English becomes enforced limits.", done: hasNotes },
     { href: "/activities", title: "Review your week", detail: "We seeded a starter week — make it yours.", done: false },
   ];
