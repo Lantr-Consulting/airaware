@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { DemoError, startDemo } from "@/lib/demo";
+import { DemoError, isDemoUser, resetDemo, startDemo } from "@/lib/demo";
 import { getLanguage, markHydrated, pick, useLanguage } from "@/lib/language";
 import { supabase } from "@/lib/supabase";
 
@@ -32,7 +32,17 @@ export default function DemoEntry() {
       if (data.session) {
         const { data: fresh, error } = await supabase.auth.getUser();
         const expires = fresh.user?.user_metadata?.demo_expires_at;
-        if (!error && fresh.user && (!expires || new Date(expires).getTime() > Date.now())) { window.location.replace("/today"); return; }
+        if (!error && fresh.user && (!expires || new Date(expires).getTime() > Date.now())) {
+          // Coming back through the demo link starts clean: a fresh
+          // workspace in the current language, then onboarding. Real
+          // signed-in accounts just pass through.
+          if (isDemoUser(fresh.user)) {
+            try { await resetDemo(); } catch {}
+            try { sessionStorage.setItem("aa-onboard", "1"); } catch {}
+          }
+          window.location.replace("/today");
+          return;
+        }
         await supabase.auth.signOut();
       }
       void enter(new URLSearchParams(window.location.search).get("code") ?? undefined);

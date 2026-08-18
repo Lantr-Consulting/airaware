@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { getLanguage } from "./language";
 
 const API = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8010";
 
@@ -44,6 +45,6 @@ export async function getDemoStatus(): Promise<DemoStatus> {
 }
 
 export async function resetDemo(): Promise<DemoStatus> {
-  const response = await fetch(`${API}/demo/reset`, { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: "{}" });
+  const response = await fetch(`${API}/demo/reset`, { method: "POST", headers: { "Content-Type": "application/json", "Accept-Language": getLanguage() === "en" ? "en" : "zh-CN", ...(await authHeaders()) }, body: "{}" });
   return installSession(await responseJson<DemoSession>(response));
 }

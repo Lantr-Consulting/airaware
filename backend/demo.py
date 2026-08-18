@@ -184,7 +184,10 @@ def create_session(request: Request, *, language: str = "zh", code: str | None =
 def reset_session(request: Request, user: dict[str, Any]) -> dict[str, Any]:
     if not is_demo_user(user):
         raise HTTPException(status_code=403, detail="只有临时演示工作区可以重置")
-    language = language_for(user)
+    # Reset in the language the visitor is USING now, not the one the old
+    # workspace was seeded with.
+    header_lang = (request.headers.get("accept-language") or "").lower()
+    language = "en" if header_lang.startswith("en") else "zh" if header_lang.startswith("zh") else language_for(user)
     _delete_auth_user(user["id"])
     return create_session(request, language=language, check_access=False, check_rate=False)
 
