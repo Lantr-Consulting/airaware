@@ -37,7 +37,16 @@ export function Onboarding({
   const [notice, setNotice] = useState<string | null>(null);
 
   const [about, setAbout] = useState("");
-  const [interp, setInterp] = useState<{ profile: AdvisorProfile; thresholds: Thresholds } | null>(null);
+  const [prof, setProf] = useState<AdvisorProfile>({
+    asthma: false,
+    pollenAllergies: [],
+    skinType: 3,
+    heatTolerance: "typical",
+    kidMode: false,
+    notes: "",
+  });
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [interpreted, setInterpreted] = useState(false);
 
   const debounceRef = useRef<number | null>(null);
   const seqRef = useRef(0);
@@ -110,26 +119,59 @@ export function Onboarding({
     setBusy(true);
     setNotice(null);
     try {
-      setInterp(await interpretProfile(text));
+      const res = await interpretProfile(text);
+      setProf(res.profile);
+      setInterpreted(true);
     } catch {
-      setNotice(pick(language, "解析暂时不可用，可以先跳过这一步。", "Interpretation is unavailable right now. You can skip this step."));
+      setNotice(pick(language, "解析暂时不可用，也可以直接点选下面的选项。", "Interpretation is unavailable right now. You can set the options below directly."));
     } finally {
       setBusy(false);
     }
   }
 
+  // The same public-agency logic the interpreter uses, applied to whatever
+  // the person confirms — editing an option keeps thresholds consistent.
+  function deriveThresholds(p: AdvisorProfile): Thresholds {
+    const sensitive = p.asthma || p.pollenAllergies.length > 0;
+    const heat =
+      p.heatTolerance === "low" || p.kidMode
+        ? { heatCautionF: 90, heatAvoidF: 100 }
+        : p.heatTolerance === "high"
+          ? { heatCautionF: 98, heatAvoidF: 107 }
+          : { heatCautionF: 95, heatAvoidF: 103 };
+    return {
+      uvProtect: p.skinType <= 2 ? 3 : p.skinType <= 4 ? 4 : 6,
+      uvAvoid: 8,
+      aqiCaution: sensitive ? 100 : 125,
+      aqiAvoid: 150,
+      pollenCaution: sensitive ? 2 : 3,
+      ...heat,
+    };
+  }
+
   async function saveProfile() {
-    if (!interp) return;
     setBusy(true);
+    setNotice(null);
     try {
-      await patchSettings({ profile: interp.profile, thresholds: interp.thresholds });
+      const profile = { ...prof, notes: prof.notes || about.trim().slice(0, 300) };
+      await patchSettings({ profile, thresholds: deriveThresholds(profile) });
       invalidateMe();
+      setProfileSaved(true);
       setStep(3);
     } catch {
       setNotice(pick(language, "保存失败，请重试。", "Couldn't save. Try again."));
     } finally {
       setBusy(false);
     }
+  }
+
+  function toggleAllergen(a: string) {
+    setProf((p) => ({
+      ...p,
+      pollenAllergies: p.pollenAllergies.includes(a)
+        ? p.pollenAllergies.filter((x) => x !== a)
+        : [...p.pollenAllergies, a],
+    }));
   }
 
   async function activate() {
@@ -167,22 +209,6 @@ export function Onboarding({
   }
 
   const steps = [0, 1, 2, 3];
-  const SKIN_EN = ["", "very fair, burns fast", "fair, burns easily", "medium, tans gradually", "olive, tans easily", "brown, rarely burns", "deep, almost never burns"];
-  const SKIN_ZH = ["", "极易晒伤", "容易晒伤", "中等，可逐渐晒黑", "偏深，容易晒黑", "较深，很少晒伤", "深色，几乎不晒伤"];
-  const chips: string[] = interp
-    ? [
-        pick(language, `肤色：${SKIN_ZH[interp.profile.skinType]}`, `Skin: ${SKIN_EN[interp.profile.skinType]}`),
-        pick(language,
-          { low: "怕热", typical: "耐热程度：一般", high: "耐热较强" }[interp.profile.heatTolerance],
-          { low: "sensitive to heat", typical: "typical heat tolerance", high: "handles heat well" }[interp.profile.heatTolerance]),
-        ...(interp.profile.asthma ? [pick(language, "哮喘", "Asthma")] : []),
-        ...(interp.profile.kidMode ? [pick(language, "带娃模式", "Planning for a child")] : []),
-        ...interp.profile.pollenAllergies.map((a) =>
-          pick(language, `${ALLERGEN_ZH[a] ?? a}过敏`, `${a} allergy`)
-        ),
-      ]
-    : [];
-
   return (
     <div className="anim-fade-in fixed inset-0 z-50 flex items-center justify-center bg-page/95 p-5 backdrop-blur-sm">
       <div className="pane w-full max-w-lg p-7 sm:p-9">
@@ -291,44 +317,129 @@ export function Onboarding({
               autoFocus
               value={about}
               onChange={(e) => setAbout(e.target.value)}
-              rows={4}
+              rows={3}
               placeholder={pick(language,
                 "例如：对花粉过敏，皮肤容易晒伤，周末会带孩子出门。",
                 "e.g. Grass pollen allergy, I burn easily, weekends are with my kid.")}
               className="mt-5 w-full rounded-2xl border border-hairline bg-page px-4 py-3 text-sm leading-relaxed placeholder:text-ink-muted"
             />
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <button
+                onClick={runInterpret}
+                disabled={busy || about.trim().length === 0}
+                className="btn-ghost px-3.5 py-1.5 text-xs disabled:opacity-45"
+              >
+                {busy ? pick(language, "解析中…", "Reading…") : pick(language, "根据描述填写下方选项", "Fill in the options from my description")}
+              </button>
+              {interpreted && (
+                <span className="text-xs text-ink-muted">
+                  {pick(language, "已根据你的描述填写，请确认或调整", "Filled from your words. Confirm or adjust below")}
+                </span>
+              )}
+            </div>
             {notice && <p className="mt-2 text-xs text-ink-muted">{notice}</p>}
-            {interp && (
-              <>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {chips.map((c) => (
-                    <span key={c} className="rounded-full border border-accent/30 bg-accent/8 px-3 py-1 text-xs font-medium text-accent">
-                      {c}
-                    </span>
+
+            <div className="mt-5 flex flex-col gap-4">
+              <div>
+                <div className="text-xs font-medium text-ink-muted">
+                  {pick(language, "皮肤对阳光的敏感度", "How your skin handles sun")}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {([
+                    { v: 2, zh: "容易晒伤", en: "Fair, burns easily" },
+                    { v: 3, zh: "中等", en: "Medium, tans gradually" },
+                    { v: 5, zh: "深色，很少晒伤", en: "Deep, rarely burns" },
+                  ] as const).map((o) => {
+                    const group = prof.skinType <= 2 ? 2 : prof.skinType <= 4 ? 3 : 5;
+                    const active = group === o.v;
+                    return (
+                      <button
+                        key={o.v}
+                        onClick={() => setProf((prev) => ({ ...prev, skinType: o.v }))}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          active ? "border-accent bg-accent/10 text-accent" : "border-hairline text-ink-2 hover:bg-ink/5"
+                        }`}
+                      >
+                        {pick(language, o.zh, o.en)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs font-medium text-ink-muted">
+                  {pick(language, "对高温的耐受", "How you handle heat")}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {([
+                    { v: "low", zh: "怕热", en: "Sensitive to heat" },
+                    { v: "typical", zh: "一般", en: "Typical" },
+                    { v: "high", zh: "比较耐热", en: "Handles heat well" },
+                  ] as const).map((o) => (
+                    <button
+                      key={o.v}
+                      onClick={() => setProf((prev) => ({ ...prev, heatTolerance: o.v }))}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        prof.heatTolerance === o.v ? "border-accent bg-accent/10 text-accent" : "border-hairline text-ink-2 hover:bg-ink/5"
+                      }`}
+                    >
+                      {pick(language, o.zh, o.en)}
+                    </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-ink-muted">
-                  {pick(language,
-                    "这些会成为你的防护标准。没提到的部分先用常见默认值，之后可在偏好设置中修改。",
-                    "These become your protection thresholds. Anything you didn't mention uses a sensible default you can change later in Preferences.")}
-                </p>
-              </>
-            )}
-            <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              {interp === null ? (
-                <button onClick={runInterpret} disabled={busy || about.trim().length === 0} className="btn-primary px-5 py-2.5 text-sm disabled:opacity-45">
-                  {busy ? pick(language, "解析中…", "Reading…") : pick(language, "为我定制", "Personalize")}
-                </button>
-              ) : (
-                <>
-                  <button onClick={saveProfile} disabled={busy} className="btn-primary px-5 py-2.5 text-sm">
-                    {busy ? "…" : pick(language, "没错，保存", "Looks right, save")}
+              </div>
+
+              <div>
+                <div className="text-xs font-medium text-ink-muted">
+                  {pick(language, "花粉过敏（可多选）", "Pollen allergies (pick any)")}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {["grass", "tree", "weed", "ragweed", "birch", "olive"].map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => toggleAllergen(a)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        prof.pollenAllergies.includes(a)
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-hairline text-ink-2 hover:bg-ink/5"
+                      }`}
+                    >
+                      {pick(language, ALLERGEN_ZH[a] ?? a, a)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { key: "asthma", zh: "哮喘", en: "Asthma" },
+                  { key: "kidMode", zh: "会带小孩出门", en: "Planning for a child" },
+                ] as const).map((o) => (
+                  <button
+                    key={o.key}
+                    onClick={() => setProf((prev) => ({ ...prev, [o.key]: !prev[o.key] }))}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      prof[o.key] ? "border-accent bg-accent/10 text-accent" : "border-hairline text-ink-2 hover:bg-ink/5"
+                    }`}
+                  >
+                    {prof[o.key] ? "✓ " : ""}
+                    {pick(language, o.zh, o.en)}
                   </button>
-                  <button onClick={() => setInterp(null)} disabled={busy} className="btn-ghost px-4 py-2.5 text-sm">
-                    {pick(language, "改一改", "Edit")}
-                  </button>
-                </>
-              )}
+                ))}
+              </div>
+            </div>
+
+            <p className="mt-3 text-xs leading-relaxed text-ink-muted">
+              {pick(language,
+                "这些选择会成为你的防护标准，之后随时可以在偏好设置中修改。",
+                "These choices become your protection thresholds. You can change them anytime in Preferences.")}
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+              <button onClick={saveProfile} disabled={busy} className="btn-primary px-5 py-2.5 text-sm">
+                {busy ? "…" : pick(language, "确认并继续", "Confirm and continue")}
+              </button>
               <button onClick={() => setStep(3)} disabled={busy} className="ml-auto text-xs font-medium text-ink-muted transition-colors hover:text-ink">
                 {pick(language, "跳过这步", "Skip this step")}
               </button>
@@ -349,8 +460,8 @@ export function Onboarding({
                   : pick(language, "常住地可稍后在偏好设置中修改", "Home location can be set later in Preferences")}
               </li>
               <li className="flex items-center gap-2.5">
-                <span aria-hidden className={`size-2 rounded-full ${interp ? "bg-good" : "bg-surface-2"}`} />
-                {interp
+                <span aria-hidden className={`size-2 rounded-full ${profileSaved ? "bg-good" : "bg-surface-2"}`} />
+                {profileSaved
                   ? pick(language, "个人防护档案已保存", "Your protection profile is saved")
                   : pick(language, "个人情况可稍后补充", "Your profile can be added later")}
               </li>
