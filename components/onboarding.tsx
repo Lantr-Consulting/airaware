@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { interpretProfile, patchSettings, searchCities } from "@/lib/api";
 import { pick, useLanguage } from "@/lib/language";
 import { invalidateMe } from "@/lib/use-me";
@@ -37,19 +37,54 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
   const [about, setAbout] = useState("");
   const [interp, setInterp] = useState<{ profile: AdvisorProfile; thresholds: Thresholds } | null>(null);
 
-  async function runSearch() {
-    const q = query.trim();
-    if (q.length < 2 || busy) return;
-    setBusy(true);
+  const debounceRef = useRef<number | null>(null);
+  const seqRef = useRef(0);
+  const [searching, setSearching] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+
+  // Type-ahead: suggestions appear as you type (city, suburb, or town);
+  // a stale response never overwrites a newer one.
+  function onQueryChange(value: string) {
+    setQuery(value);
     setNotice(null);
-    try {
-      const hits = await searchCities(q);
-      setResults(hits.slice(0, 5));
-      if (hits.length === 0) setNotice(pick(language, "没有找到这个城市，换个写法试试。", "No city found. Try another spelling."));
-    } catch {
-      setNotice(pick(language, "搜索暂时不可用，请稍后再试。", "Search is unavailable right now. Try again in a moment."));
-    } finally {
-      setBusy(false);
+    if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
+    const q = value.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    debounceRef.current = window.setTimeout(async () => {
+      const seq = ++seqRef.current;
+      try {
+        const hits = await searchCities(q, 8);
+        if (seq !== seqRef.current) return;
+        setResults(hits);
+        setHighlight(0);
+        if (hits.length === 0) setNotice(pick(language, "没有找到这个地方，换个写法试试。", "No match. Try another spelling."));
+      } catch {
+        if (seq === seqRef.current)
+          setNotice(pick(language, "搜索暂时不可用，请稍后再试。", "Search is unavailable right now. Try again in a moment."));
+      } finally {
+        if (seq === seqRef.current) setSearching(false);
+      }
+    }, 280);
+  }
+
+  function onSearchKey(e: React.KeyboardEvent) {
+    if (results.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => (h + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => (h - 1 + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      void chooseHome(results[highlight]);
+    } else if (e.key === "Escape") {
+      setResults([]);
     }
   }
 
@@ -193,35 +228,45 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
               {pick(language, "计划会使用你所在地的实时预报。", "Plans use the live forecast for your area.")}
             </p>
-            <div className="mt-5 flex items-center gap-2">
+            <div className="relative mt-5">
               <input
                 autoFocus
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && runSearch()}
-                placeholder={pick(language, "搜索城市，如：上海", "Search a city, e.g. Austin")}
-                className="flex-1 rounded-full border border-hairline bg-page px-4 py-2.5 text-sm placeholder:text-ink-muted"
+                onChange={(e) => onQueryChange(e.target.value)}
+                onKeyDown={onSearchKey}
+                role="combobox"
+                aria-expanded={results.length > 0}
+                aria-autocomplete="list"
+                placeholder={pick(language, "开始输入城市或城区，如：上海、浦东", "Start typing a city or suburb, e.g. Austin")}
+                className="w-full rounded-full border border-hairline bg-page px-4 py-2.5 text-sm placeholder:text-ink-muted"
               />
-              <button onClick={runSearch} disabled={busy} className="btn-primary px-4 py-2.5 text-sm">
-                {busy ? "…" : pick(language, "搜索", "Search")}
-              </button>
+              {searching && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-ink-muted">
+                  {pick(language, "搜索中…", "Searching…")}
+                </span>
+              )}
+              {results.length > 0 && (
+                <div className="pane absolute inset-x-0 top-[calc(100%+6px)] z-10 max-h-72 overflow-y-auto p-1.5">
+                  {results.map((r, i) => (
+                    <button
+                      key={`${r.name}-${r.lat}-${r.lon}`}
+                      onClick={() => chooseHome(r)}
+                      onMouseEnter={() => setHighlight(i)}
+                      disabled={busy}
+                      className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-sm transition-colors ${
+                        i === highlight ? "bg-accent/8 text-accent" : "text-ink hover:bg-ink/5"
+                      }`}
+                    >
+                      <span className="font-medium">{r.name}</span>
+                      <span className={`text-xs ${i === highlight ? "text-accent" : "text-ink-muted"}`}>
+                        {pick(language, "选择", "Choose")} →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             {notice && <p className="mt-2 text-xs text-ink-muted">{notice}</p>}
-            {results.length > 0 && (
-              <div className="mt-3 flex flex-col gap-1.5">
-                {results.map((r) => (
-                  <button
-                    key={`${r.name}-${r.lat}`}
-                    onClick={() => chooseHome(r)}
-                    disabled={busy}
-                    className="flex items-center justify-between rounded-xl border border-hairline px-4 py-2.5 text-left text-sm transition-colors hover:border-accent/40 hover:bg-accent/5"
-                  >
-                    <span className="font-medium">{r.name}</span>
-                    <span className="text-xs text-ink-muted">{pick(language, "选择", "Choose")} →</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

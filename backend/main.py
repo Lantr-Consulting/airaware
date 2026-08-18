@@ -114,9 +114,9 @@ def conditions(
 
 
 @app.get("/conditions/search")
-def conditions_search(request: Request, q: str = Query(..., min_length=2)):
+def conditions_search(request: Request, q: str = Query(..., min_length=2), count: int = Query(default=5, ge=1, le=10)):
     try:
-        return {"results": environment.geocode(q, language=_request_language(request))}
+        return {"results": environment.geocode(q, count=count, language=_request_language(request))}
     except Exception as e:
         raise HTTPException(status_code=502, detail="城市搜索服务暂不可用，请稍后重试")
 

@@ -75,9 +75,9 @@ export interface LiveConditions {
   daily: DailySummary[];
 }
 
-export function searchCities(q: string): Promise<Location[]> {
+export function searchCities(q: string, count = 5): Promise<Location[]> {
   return req<{ results: Location[] }>(
-    `/conditions/search?q=${encodeURIComponent(q)}`
+    `/conditions/search?q=${encodeURIComponent(q)}&count=${count}`
   ).then((r) => r.results);
 }
 
