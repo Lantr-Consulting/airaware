@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDemoStatus, resetDemo, startDemo, type DemoStatus } from "@/lib/demo";
-import { getLanguage, pick, useLanguage } from "@/lib/language";
+import { getDemoStatus, resetDemo, type DemoStatus } from "@/lib/demo";
+import { pick, useLanguage } from "@/lib/language";
 import { supabase } from "@/lib/supabase";
 
 export function DemoBanner() {
@@ -35,15 +35,10 @@ export function DemoBanner() {
 
   async function reset() { if (!window.confirm(pick(language, "这会清空你在三个项目中的临时演示数据，并恢复示例内容。继续吗？", "This clears your temporary data across all three demos and restores the samples. Continue?"))) return; setResetting(true); try { await resetDemo(); window.location.assign("/today"); } catch { setResetting(false); } }
 
-  async function freshWorkspace() {
+  function freshWorkspace() {
+    // The demo entry mints the new workspace and runs onboarding there.
     setSwitching(true);
-    try {
-      await startDemo(getLanguage());
-    } catch {
-      try { await resetDemo(); } catch { setSwitching(false); return; }
-    }
-    try { sessionStorage.setItem("aa-onboard", "1"); } catch {}
-    window.location.assign("/today");
+    window.location.assign("/demo");
   }
 
   function hideMismatch() {

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { DemoError, isDemoUser, resetDemo, startDemo } from "@/lib/demo";
+import { Onboarding } from "@/components/onboarding";
 import { getLanguage, markHydrated, pick, useLanguage } from "@/lib/language";
 import { supabase } from "@/lib/supabase";
 
 export default function DemoEntry() {
   const language = useLanguage();
   const started = useRef(false);
-  const [state, setState] = useState<"starting" | "invite" | "error">("starting");
+  const [state, setState] = useState<"starting" | "invite" | "error" | "onboard">("starting");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -20,8 +21,8 @@ export default function DemoEntry() {
     markHydrated();
     try {
       await startDemo(getLanguage(), inviteCode);
-      try { sessionStorage.setItem("aa-onboard", "1"); } catch {}
-      window.location.replace("/today");
+      setState("onboard");
+      setBusy(false);
     }
     catch (error) { setState(error instanceof DemoError && error.status === 403 ? "invite" : "error"); setBusy(false); }
   }, [language]);
@@ -34,7 +35,7 @@ export default function DemoEntry() {
         const expires = fresh.user?.user_metadata?.demo_expires_at;
         if (!error && fresh.user && (!expires || new Date(expires).getTime() > Date.now())) {
           // Coming back through the demo link starts clean: a brand-new
-          // workspace seeded in the current language, then onboarding.
+          // workspace seeded in the current language, onboarded right here.
           // (Falls back to a reset if creation is rate-limited; real
           // signed-in accounts just pass through.)
           if (isDemoUser(fresh.user)) {
@@ -44,7 +45,8 @@ export default function DemoEntry() {
             } catch {
               try { await resetDemo(); } catch {}
             }
-            try { sessionStorage.setItem("aa-onboard", "1"); } catch {}
+            setState("onboard");
+            return;
           }
           window.location.replace("/today");
           return;
@@ -56,6 +58,14 @@ export default function DemoEntry() {
   }, [enter]);
 
   function submit(event: FormEvent) { event.preventDefault(); if (!busy && code.trim()) void enter(code.trim()); }
+
+  if (state === "onboard") {
+    return (
+      <main className="min-h-screen bg-page text-ink">
+        <Onboarding variant="demo" onDone={() => window.location.replace("/today")} />
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-5 py-12 text-ink">

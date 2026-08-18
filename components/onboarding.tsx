@@ -17,11 +17,13 @@ const ALLERGEN_ZH: Record<string, string> = {
   mugwort: "艾蒿", olive: "橄榄树", tree: "树木", weed: "杂草",
 };
 
-function clearDemoFlag() {
-  try { sessionStorage.removeItem("aa-onboard"); } catch {}
-}
-
-export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }) {
+export function Onboarding({
+  variant = "setup",
+  onDone,
+}: {
+  variant?: "setup" | "demo";
+  onDone?: () => void;
+}) {
   const language = useLanguage();
   const [finished, setFinished] = useState(false);
   const toast = useToast();
@@ -135,8 +137,8 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
     try {
       await patchSettings({ activated: true });
       invalidateMe();
-      clearDemoFlag();
       setFinished(true);
+      onDone?.();
       toast("success", pick(language, "户外助手已启用，现在可以生成第一份今日安排。", "Advisor activated. Planning your first day is one click away."));
     } catch {
       toast("error", pick(language, "暂时无法启用，请稍后再试。", "Couldn't activate. Try again."));
@@ -195,7 +197,10 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
             ))}
           </div>
           <button
-            onClick={() => { clearDemoFlag(); setOpen(false); }}
+            onClick={() => {
+              setOpen(false);
+              if (variant === "demo") onDone?.();
+            }}
             className="text-xs font-medium text-ink-muted transition-colors hover:text-ink"
           >
             {pick(language, "稍后再说", "Later")}

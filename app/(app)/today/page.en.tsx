@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { BandLegend, DayTimeline } from "@/components/day-timeline";
 import { PlanItemCard } from "@/components/plan-item-card";
 import { Card, ConditionTile, ScoreRing } from "@/components/ui";
@@ -35,20 +35,6 @@ export default function TodayPage() {
   const [run, setRun] = useState<{ id: string; started: number } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [steerDraft, setSteerDraft] = useState("");
-  // A just-created demo session walks through onboarding once (the demo
-  // page sets this flag right before redirecting here).
-  const [freshDemo, setFreshDemo] = useState(false);
-
-  // Layout effect: the flag is read and the wizard mounted BEFORE the
-  // browser paints, so a fresh demo never sees a flash of the dashboard.
-  // The wizard clears the flag itself when it finishes, so both language
-  // twins can read it (the zh page mounts first).
-  useLayoutEffect(() => {
-    try {
-      if (sessionStorage.getItem("aa-onboard") === "1") setFreshDemo(true);
-    } catch {}
-  }, []);
-
   const signedOut = !meLoading && me === null;
 
   useEffect(() => {
@@ -170,7 +156,6 @@ export default function TodayPage() {
   if (pendingLive) {
     return (
       <div className="flex flex-col gap-6">
-        {freshDemo && <Onboarding variant="demo" />}
         <div className="skeleton h-28 max-w-xl" />
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -281,7 +266,6 @@ export default function TodayPage() {
 
         <div className="flex flex-col gap-4 xl:col-span-5">
         {needsSetup && <Onboarding />}
-        {!needsSetup && freshDemo && <Onboarding variant="demo" />}
 
       {/* The agent, at a glance. Always know what it's doing and what it
           needs from you. Decisions come before dashboards. */}
