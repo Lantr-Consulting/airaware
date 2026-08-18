@@ -603,6 +603,9 @@ Rules:
   kidMode -> heatCautionF 90, heatAvoidF 100; typical -> 95/103; high -> 98/107.
   uvAvoid 8 unless they say they burn instantly (then 6).
 - Be conservative when unsure; never invent medical conditions they didn't state.
+- If they mention pollen or seasonal allergies WITHOUT naming what they react
+  to, use only the generic categories ["grass", "tree", "weed"]. Never name a
+  specific species (birch, ragweed, olive, alder, mugwort) they didn't state.
 - Follow the per-request language instruction appended below for profile.notes.
   Keep internal enum values and JSON keys exactly as specified. Terms for
   allergens in any language must still map to the allowed English enum values.

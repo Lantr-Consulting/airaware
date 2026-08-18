@@ -198,7 +198,7 @@ export default function ProfilePage() {
       if (live) {
         await patchSettings({ profile: nextProfile, thresholds: result.thresholds });
         invalidateMe();
-        toast("success", "Profile interpreted and saved. The limits below are now enforced.");
+        toast("success", "Profile interpreted and saved. Your protection plan below is now active.");
       } else {
         setNotice("Interpreted (preview only. Sign in to save it to your account).");
       }
@@ -268,7 +268,7 @@ export default function ProfilePage() {
           </div>
           <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
             You describe yourself in plain English; the advisor turns it into
-            the limits below. Nothing changes without your say-so.
+            your protection plan below. Nothing changes without your say-so.
           </p>
           {signedOut && (
             <Link href="/signin" className="mt-1 inline-block text-xs font-medium text-accent hover:underline">
@@ -306,7 +306,7 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-sm font-semibold tracking-tight">Review, then activate</h2>
               <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-ink-2">
-                Set your home below, describe yourself, and check the limits
+                Set your home below, describe yourself, and review your protection plan
                 table. When it looks like you, activate. Nothing plans until
                 you do.
               </p>
@@ -328,7 +328,7 @@ export default function ProfilePage() {
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-ink-muted">
-            {notice ?? "Describe yourself and press Interpret. The limits below update (and save, when signed in)."}
+            {notice ?? "Describe yourself and press Interpret. Your protection plan below updates (and saves, when signed in)."}
           </p>
           <button onClick={interpret} disabled={interpreting} className="btn-primary px-4 py-1.5 text-sm">
             {interpreting ? "Interpreting…" : "Interpret"}
@@ -358,7 +358,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      <Card title="Your limits. What the engine enforces">
+      <Card title="Your protection plan. What the engine enforces">
         <ul className="flex flex-col divide-y divide-hairline">
           {thresholdRows.map((r) => (
             <li key={r.line} className="flex items-center justify-between gap-4 py-2.5 text-sm">
@@ -368,7 +368,7 @@ export default function ProfilePage() {
           ))}
         </ul>
         <p className="mt-3 text-xs text-ink-muted">
-          Every plan item shows which limits were triggered. These checks run
+          Every plan item shows which protections were triggered. These checks run
           in regular code, so changing a limit updates every future plan.
         </p>
       </Card>

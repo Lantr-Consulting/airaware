@@ -199,7 +199,7 @@ export default function ProfilePage() {
       if (live) {
         await patchSettings({ profile: nextProfile, thresholds: result.thresholds });
         invalidateMe();
-        toast("success", "个人情况已整理并保存，下方提醒线已经生效。 ");
+        toast("success", "个人情况已整理并保存，下方防护标准已经生效。 ");
       } else {
         setNotice("已生成预览；登录后才能保存到你的账户。 ");
       }
@@ -268,7 +268,7 @@ export default function ProfilePage() {
             </span>
           </div>
           <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
-            用自然语言描述你的个人情况，助手会整理成下方明确的提醒线；未经你确认，不会自动修改活动。
+            用自然语言描述你的个人情况，助手会整理成下方明确的防护标准；未经你确认，不会自动修改活动。
           </p>
           {signedOut && (
             <Link href="/signin" className="mt-1 inline-block text-xs font-medium text-accent hover:underline">
@@ -306,7 +306,7 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-sm font-semibold tracking-tight">确认后启用</h2>
               <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-ink-2">
-                请设置常住地、描述个人情况并检查提醒线。确认准确后再启用；在此之前不会自动生成安排。
+                请设置常住地、描述个人情况并检查防护标准。确认准确后再启用；在此之前不会自动生成安排。
               </p>
             </div>
             <button onClick={activate} disabled={activating} className="btn-primary px-5 py-2 text-sm">
@@ -326,10 +326,10 @@ export default function ProfilePage() {
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-ink-muted">
-            {notice ?? "写下个人情况并点击“整理为提醒线”；登录后会同步保存。"}
+            {notice ?? "写下个人情况并点击“生成防护标准”；登录后会同步保存。"}
           </p>
           <button onClick={interpret} disabled={interpreting} className="btn-primary px-4 py-1.5 text-sm">
-            {interpreting ? "正在整理…" : "整理为提醒线"}
+            {interpreting ? "正在整理…" : "生成防护标准"}
           </button>
         </div>
       </Card>
@@ -356,7 +356,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      <Card title="提醒线 · 由系统强制执行">
+      <Card title="防护标准 · 由系统自动执行">
         <ul className="flex flex-col divide-y divide-hairline">
           {thresholdRows.map((r) => (
             <li key={r.line} className="flex items-center justify-between gap-4 py-2.5 text-sm">
