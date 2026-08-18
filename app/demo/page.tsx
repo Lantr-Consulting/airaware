@@ -33,11 +33,17 @@ export default function DemoEntry() {
         const { data: fresh, error } = await supabase.auth.getUser();
         const expires = fresh.user?.user_metadata?.demo_expires_at;
         if (!error && fresh.user && (!expires || new Date(expires).getTime() > Date.now())) {
-          // Coming back through the demo link starts clean: a fresh
-          // workspace in the current language, then onboarding. Real
-          // signed-in accounts just pass through.
+          // Coming back through the demo link starts clean: a brand-new
+          // workspace seeded in the current language, then onboarding.
+          // (Falls back to a reset if creation is rate-limited; real
+          // signed-in accounts just pass through.)
           if (isDemoUser(fresh.user)) {
-            try { await resetDemo(); } catch {}
+            markHydrated();
+            try {
+              await startDemo(getLanguage());
+            } catch {
+              try { await resetDemo(); } catch {}
+            }
             try { sessionStorage.setItem("aa-onboard", "1"); } catch {}
           }
           window.location.replace("/today");

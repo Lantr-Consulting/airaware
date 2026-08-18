@@ -277,8 +277,8 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
               {pick(language,
-                "过敏、皮肤、耐热程度、是否带小孩……随便写，我会把它变成明确的保护线。",
-                "Allergies, skin, heat, kids. Write it naturally, and I'll turn it into enforced limits.")}
+                "过敏、皮肤、耐热程度、是否带小孩……随便写，我会据此为你定制防护标准。",
+                "Allergies, skin, heat, kids. Write it naturally, and I'll tailor your protection to it.")}
             </p>
             <textarea
               autoFocus
@@ -303,7 +303,7 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
             <div className="mt-6 flex flex-wrap items-center gap-2.5">
               {interp === null ? (
                 <button onClick={runInterpret} disabled={busy || about.trim().length === 0} className="btn-primary px-5 py-2.5 text-sm disabled:opacity-45">
-                  {busy ? pick(language, "解析中…", "Reading…") : pick(language, "解析为保护线", "Turn into limits")}
+                  {busy ? pick(language, "解析中…", "Reading…") : pick(language, "为我定制", "Personalize")}
                 </button>
               ) : (
                 <>
@@ -337,7 +337,7 @@ export function Onboarding({ variant = "setup" }: { variant?: "setup" | "demo" }
               <li className="flex items-center gap-2.5">
                 <span aria-hidden className={`size-2 rounded-full ${interp ? "bg-good" : "bg-surface-2"}`} />
                 {interp
-                  ? pick(language, "个人保护线已保存", "Your personal limits are saved")
+                  ? pick(language, "个人防护档案已保存", "Your protection profile is saved")
                   : pick(language, "个人情况可稍后补充", "Your profile can be added later")}
               </li>
               <li className="flex items-center gap-2.5">
