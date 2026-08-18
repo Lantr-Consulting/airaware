@@ -60,8 +60,8 @@ def _request_language(request: Request) -> str:
 
 def _language_rule(language: str) -> str:
     if language == "en":
-        return "Write every user-facing field in natural English and use Fahrenheit."
-    return "Write every user-facing field in idiomatic Simplified Chinese as a native Chinese health-and-lifestyle product would; avoid literal English translation patterns and convert Fahrenheit to Celsius."
+        return "Write every user-facing field in natural English and use Fahrenheit. Never use em dashes; join clauses with commas or periods."
+    return "Write every user-facing field in idiomatic Simplified Chinese as a native Chinese health-and-lifestyle product would; avoid literal English translation patterns and convert Fahrenheit to Celsius. 不要使用破折号（——），改用逗号或句号。"
 
 
 @app.get("/health")

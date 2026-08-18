@@ -37,16 +37,17 @@ function Rich({ text }: { text: string }) {
   );
 }
 
-function Bubble({ msg }: { msg: Message }) {
+function Bubble({ msg, streaming = false }: { msg: Message; streaming?: boolean }) {
   const mine = msg.role === "user";
   return (
     <div
       className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
         mine ? "self-end bg-accent text-accent-contrast" : "self-start bg-surface text-ink-2"
       }`}
-      style={{ animation: "msg-in 0.15s ease" }}
+      style={{ animation: "msg-in 0.3s ease-out" }}
     >
       <Rich text={msg.content} />
+      {streaming && <span aria-hidden className="type-caret">▍</span>}
     </div>
   );
 }
@@ -64,6 +65,12 @@ export default function AdvisorPage() {
   const [thinking, setThinking] = useState(false);
   const [livePlan, setLivePlan] = useState<DayPlan | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  // The reply that is currently being "typed out", plus a guard so a
+  // fresh conversation keeps its bubbles when the server names the thread.
+  const [typing, setTyping] = useState<{ id: string; full: string; shown: number } | null>(null);
+  const skipNextFetch = useRef(false);
+  // Threads born in this session keep their greeting bubble.
+  const [sessionThreadId, setSessionThreadId] = useState<string | null>(null);
 
   const live = me !== null;
   const signedOut = !meLoading && me === null;
@@ -80,6 +87,10 @@ export default function AdvisorPage() {
 
   useEffect(() => {
     if (!me || activeId === null) return;
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false;
+      return;
+    }
     let cancelled = false;
     getThreadMessages(activeId)
       .then((ms) => {
@@ -94,7 +105,7 @@ export default function AdvisorPage() {
   }, [me, activeId]);
 
   const greeting: Message[] =
-    live && activeId === null
+    live && (activeId === null || activeId === sessionThreadId)
       ? [
           {
             id: "greet",
@@ -115,10 +126,29 @@ export default function AdvisorPage() {
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length, thinking]);
+  }, [messages.length, thinking, typing?.shown]);
+
+  // Reveal fresh replies a few characters per frame, like live generation.
+  useEffect(() => {
+    if (!typing) return;
+    const timer = setInterval(() => {
+      setTyping((cur) =>
+        cur ? { ...cur, shown: Math.min(cur.full.length, cur.shown + 3) } : cur
+      );
+    }, 16);
+    return () => clearInterval(timer);
+  }, [typing?.id]);
+
+  useEffect(() => {
+    if (typing && typing.shown >= typing.full.length) {
+      const done = setTimeout(() => setTyping(null), 250);
+      return () => clearTimeout(done);
+    }
+  }, [typing]);
 
   function openThread(id: string | null) {
     setActiveId(id);
+    setSessionThreadId(null);
     setExtra([]);
     if (id === null) setDbMsgs([]);
   }
@@ -134,11 +164,15 @@ export default function AdvisorPage() {
     try {
       if (live) {
         const res = await chat({ message: text, threadId: activeId });
+        const id = `x${Date.now()}-a`;
         setExtra((xs) => [
           ...xs,
-          { id: `x${xs.length}-a`, threadId: tid, role: "assistant", content: res.reply, createdAt: "" },
+          { id, threadId: tid, role: "assistant", content: res.reply, createdAt: "" },
         ]);
+        setTyping({ id, full: res.reply, shown: 0 });
         if (res.threadId && res.threadId !== activeId) {
+          skipNextFetch.current = true;
+          setSessionThreadId(res.threadId);
           setActiveId(res.threadId);
           getThreads().then(setThreads).catch(() => {});
         }
@@ -151,10 +185,12 @@ export default function AdvisorPage() {
           profile: ADVISOR.profile,
           thresholds: ADVISOR.thresholds,
         });
+        const id = `x${Date.now()}-a`;
         setExtra((xs) => [
           ...xs,
-          { id: `x${xs.length}-a`, threadId: tid, role: "assistant", content: res.reply, createdAt: "" },
+          { id, threadId: tid, role: "assistant", content: res.reply, createdAt: "" },
         ]);
+        setTyping({ id, full: res.reply, shown: 0 });
       }
     } catch {
       setExtra((xs) => [
@@ -173,7 +209,7 @@ export default function AdvisorPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 gap-6">
+    <div className="flex h-[calc(100dvh-12rem)] min-h-[440px] gap-6 lg:h-[calc(100dvh-7.5rem)]">
       {/* Conversation */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="mb-4">
@@ -200,10 +236,22 @@ export default function AdvisorPage() {
 
         <div ref={scroller} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-4">
           {messages.map((m) => (
-            <Bubble key={m.id} msg={m} />
+            <Bubble
+              key={m.id}
+              msg={
+                typing && m.id === typing.id
+                  ? { ...m, content: typing.full.slice(0, typing.shown) }
+                  : m
+              }
+              streaming={typing?.id === m.id && typing.shown < typing.full.length}
+            />
           ))}
           {thinking && (
-            <div className="self-start rounded-2xl bg-surface px-4 py-3 text-sm text-ink-muted">
+            <div
+              className="flex items-center gap-2.5 self-start rounded-2xl bg-surface px-4 py-3 text-sm text-ink-muted"
+              style={{ animation: "msg-in 0.3s ease-out" }}
+            >
+              <span aria-hidden className="dot-pulse"><i /><i /><i /></span>
               Checking the sky…
             </div>
           )}
