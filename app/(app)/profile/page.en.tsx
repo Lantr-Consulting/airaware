@@ -10,6 +10,7 @@ import { invalidateMe, useMe } from "@/lib/use-me";
 import type { AdvisorProfile, Location, Thresholds } from "@/lib/types";
 
 const SKIN_TYPES = ["", "I", "II", "III", "IV", "V", "VI"];
+const SKIN_WORDS = ["", "very fair, burns fast", "fair, burns easily", "medium, tans gradually", "olive, tans easily", "brown, rarely burns", "deep, almost never burns"];
 const POLLEN_BANDS = ["Low", "Low–medium", "Medium", "Medium–high", "High"];
 
 function HomeEditor({
@@ -339,7 +340,7 @@ export default function ProfilePage() {
       <Card title="Sensitivities">
         <div className="flex flex-wrap gap-2 text-[11px] font-medium">
           <span className="rounded-full border border-hairline px-3 py-1.5 text-ink-2">
-            Skin type {SKIN_TYPES[profile.skinType]}
+            Skin: {SKIN_WORDS[profile.skinType]}
           </span>
           {profile.pollenAllergies.map((p) => (
             <span key={p} className="rounded-full border border-hairline px-3 py-1.5 capitalize text-ink-2">

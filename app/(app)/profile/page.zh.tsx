@@ -11,6 +11,7 @@ import { fmtTempF } from "@/lib/format";
 import type { AdvisorProfile, Location, Thresholds } from "@/lib/types";
 
 const SKIN_TYPES = ["", "I", "II", "III", "IV", "V", "VI"];
+const SKIN_WORDS = ["", "极易晒伤", "容易晒伤", "中等，可逐渐晒黑", "偏深，容易晒黑", "较深，很少晒伤", "深色，几乎不晒伤"];
 const POLLEN_BANDS = ["低", "较低", "中等", "较高", "高"];
 
 function HomeEditor({
@@ -337,7 +338,7 @@ export default function ProfilePage() {
       <Card title="敏感因素">
         <div className="flex flex-wrap gap-2 text-[11px] font-medium">
           <span className="rounded-full border border-hairline px-3 py-1.5 text-ink-2">
-            皮肤类型 {SKIN_TYPES[profile.skinType]}
+            肤色：{SKIN_WORDS[profile.skinType]}
           </span>
           {profile.pollenAllergies.map((p) => (
             <span key={p} className="rounded-full border border-hairline px-3 py-1.5 capitalize text-ink-2">

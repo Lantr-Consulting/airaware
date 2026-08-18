@@ -167,14 +167,16 @@ export function Onboarding({
   }
 
   const steps = [0, 1, 2, 3];
+  const SKIN_EN = ["", "very fair, burns fast", "fair, burns easily", "medium, tans gradually", "olive, tans easily", "brown, rarely burns", "deep, almost never burns"];
+  const SKIN_ZH = ["", "极易晒伤", "容易晒伤", "中等，可逐渐晒黑", "偏深，容易晒黑", "较深，很少晒伤", "深色，几乎不晒伤"];
   const chips: string[] = interp
     ? [
-        pick(language, `皮肤类型 ${interp.profile.skinType}`, `Skin type ${interp.profile.skinType}`),
+        pick(language, `肤色：${SKIN_ZH[interp.profile.skinType]}`, `Skin: ${SKIN_EN[interp.profile.skinType]}`),
         pick(language,
-          { low: "怕热", typical: "耐热一般", high: "耐热较强" }[interp.profile.heatTolerance],
-          `${interp.profile.heatTolerance} heat tolerance`),
+          { low: "怕热", typical: "耐热程度：一般", high: "耐热较强" }[interp.profile.heatTolerance],
+          { low: "sensitive to heat", typical: "typical heat tolerance", high: "handles heat well" }[interp.profile.heatTolerance]),
         ...(interp.profile.asthma ? [pick(language, "哮喘", "Asthma")] : []),
-        ...(interp.profile.kidMode ? [pick(language, "带娃模式", "Kid mode")] : []),
+        ...(interp.profile.kidMode ? [pick(language, "带娃模式", "Planning for a child")] : []),
         ...interp.profile.pollenAllergies.map((a) =>
           pick(language, `${ALLERGEN_ZH[a] ?? a}过敏`, `${a} allergy`)
         ),
@@ -297,13 +299,20 @@ export function Onboarding({
             />
             {notice && <p className="mt-2 text-xs text-ink-muted">{notice}</p>}
             {interp && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {chips.map((c) => (
-                  <span key={c} className="rounded-full border border-accent/30 bg-accent/8 px-3 py-1 text-xs font-medium text-accent">
-                    {c}
-                  </span>
-                ))}
-              </div>
+              <>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {chips.map((c) => (
+                    <span key={c} className="rounded-full border border-accent/30 bg-accent/8 px-3 py-1 text-xs font-medium text-accent">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+                  {pick(language,
+                    "这些会成为你的防护标准。没提到的部分先用常见默认值，之后可在偏好设置中修改。",
+                    "These become your protection thresholds. Anything you didn't mention uses a sensible default you can change later in Preferences.")}
+                </p>
+              </>
             )}
             <div className="mt-6 flex flex-wrap items-center gap-2.5">
               {interp === null ? (
