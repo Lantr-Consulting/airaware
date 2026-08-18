@@ -75,10 +75,37 @@ export interface LiveConditions {
   daily: DailySummary[];
 }
 
-export function searchCities(q: string, count = 5): Promise<Location[]> {
-  return req<{ results: Location[] }>(
-    `/conditions/search?q=${encodeURIComponent(q)}&count=${count}`
-  ).then((r) => r.results);
+// City search goes straight to Open-Meteo from the browser (keyless and
+// CORS-open), so result names always follow the UI language regardless of
+// backend deploy state. Shapes match the backend proxy exactly.
+export async function searchCities(q: string, count = 5): Promise<Location[]> {
+  const language = getLanguage() === "en" ? "en" : "zh";
+  const res = await fetch(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=${count}&language=${language}&format=json`
+  );
+  if (!res.ok) throw new ApiError(res.status, res.statusText);
+  const data: {
+    results?: {
+      name: string;
+      admin1?: string;
+      country?: string;
+      country_code?: string;
+      latitude: number;
+      longitude: number;
+      timezone?: string;
+      postcodes?: string[];
+    }[];
+  } = await res.json();
+  return (data.results ?? []).map((hit) => {
+    const suffix = hit.country_code === "US" || !hit.country ? hit.admin1 : hit.country;
+    return {
+      name: suffix ? `${hit.name}, ${suffix}` : hit.name,
+      lat: hit.latitude,
+      lon: hit.longitude,
+      tz: hit.timezone ?? "UTC",
+      zip: hit.country_code === "US" && hit.postcodes?.length ? hit.postcodes[0] : undefined,
+    };
+  });
 }
 
 export function getConditions(loc: {
