@@ -1,6 +1,6 @@
 "use client";
 
-/* Marketing landing at "/" — FORGE design language (matching lantr.site).
+/* Marketing landing at "/". FORGE design language (matching lantr.site).
    The product lives behind it under /today etc. */
 
 import { useEffect, useState } from "react";
@@ -213,7 +213,7 @@ const COPY = {
   },
 } as const;
 
-/* The AirAware mark — wind glyph on the sky-blue chip (matches the app icon). */
+/* The AirAware mark. Wind glyph on the sky-blue chip (matches the app icon). */
 function Mark({ size = 8 }: { size?: 7 | 8 }) {
   return (
     <span
@@ -236,7 +236,7 @@ function Mark({ size = 8 }: { size?: 7 | 8 }) {
   );
 }
 
-/* A stylized still of the product — the sky-dark planner inside a window frame. */
+/* A stylized still of the product. The sky-dark planner inside a window frame. */
 function ProductFrame({ lang }: { lang: Lang }) {
   const zh = lang === "zh";
   return (
@@ -263,7 +263,7 @@ function ProductFrame({ lang }: { lang: Lang }) {
             </span>
           </div>
           <div className="mt-1 text-sm font-medium text-[#4cc3ff]">
-            {zh ? "建议时间：上午 7:00—9:00" : "Best window: 7:00 – 9:00 AM"}
+            {zh ? "建议时间：上午 7:00, 9:00" : "Best window: 7:00 – 9:00 AM"}
           </div>
           <svg
             viewBox="0 0 300 80"
@@ -325,7 +325,7 @@ function ProductFrame({ lang }: { lang: Lang }) {
                 {zh ? "晨跑" : "Morning run"}
               </span>
               <span className="lp-mono text-[12px] text-[#a9b8cb]">
-                {zh ? "调整到上午 7:00—7:45" : "shift → 7:00 – 7:45 AM"}
+                {zh ? "调整到上午 7:00, 7:45" : "shift → 7:00 – 7:45 AM"}
               </span>
             </div>
             <p className="mt-2 text-[12px] leading-relaxed text-[#a9b8cb]">
@@ -336,8 +336,8 @@ function ProductFrame({ lang }: { lang: Lang }) {
             <ul className="mt-3 space-y-1.5">
               {[
                 ["ok", zh ? "上午 9 点前紫外线较低" : "UV below caution before 9 AM"],
-                ["ok", zh ? "空气质量中等，可以正常活动" : "AQI moderate — intensity OK"],
-                ["warn", zh ? "花粉浓度中等，注意草类过敏" : "Pollen medium — grass allergy"],
+                ["ok", zh ? "空气质量中等，可以正常活动" : "AQI moderate. Intensity OK"],
+                ["warn", zh ? "花粉浓度中等，注意草类过敏" : "Pollen medium. Grass allergy"],
               ].map(([kind, c]) => (
                 <li
                   key={c}
@@ -385,7 +385,7 @@ function ProductFrame({ lang }: { lang: Lang }) {
             </div>
           </div>
           <p className="lp-mono mt-3 text-[10px] leading-relaxed text-[#5b6a7e]">
-            {zh ? "只供日常参考，不代替医疗建议。" : "General guidance — not medical advice."}
+            {zh ? "只供日常参考，不代替医疗建议。" : "General guidance. Not medical advice."}
           </p>
         </div>
       </div>
@@ -714,7 +714,7 @@ export default function Landing() {
                       href={lang === "en" ? "https://lantr.site/en" : "https://lantr.site"}
                       className="hover:text-[var(--lp-fg)]"
                     >
-                      lantr.site — {lang === "en" ? "student showcase" : "学生作品展"}
+                      lantr.site. {lang === "en" ? "student showcase" : "学生作品展"}
                     </a>
                   </li>
                   <li>

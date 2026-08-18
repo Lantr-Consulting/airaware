@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BandLegend, DayTimeline } from "@/components/day-timeline";
 import { PlanItemCard } from "@/components/plan-item-card";
-import { Card, ConditionTile } from "@/components/ui";
+import { Card, ConditionTile, ScoreRing } from "@/components/ui";
+import { Onboarding } from "@/components/onboarding";
 import { useToast } from "@/components/toast";
-import { aqiBand, dayScoreTone, heatBand, pollenBand, uvBand } from "@/lib/bands";
+import { aqiBand, heatBand, pollenBand, uvBand } from "@/lib/bands";
 import {
   acceptItem,
   declineItem,
@@ -15,77 +16,14 @@ import {
   getRun,
   getTodayPlan,
   listActivities,
-  patchSettings,
   steerRun,
   type LiveConditions,
 } from "@/lib/api";
 import { fmtTempF, fmtWeekday } from "@/lib/format";
-import { ACTIVITIES, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
+import { ACTIVITIES, HOME, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock";
 import { activitiesOn } from "@/lib/schedule";
 import { invalidateMe, useMe } from "@/lib/use-me";
 import type { Activity, DayPlan, PlanItem } from "@/lib/types";
-
-function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: () => void }) {
-  const toast = useToast();
-  const [busy, setBusy] = useState(false);
-
-  async function activate() {
-    setBusy(true);
-    try {
-      await patchSettings({ activated: true });
-      invalidateMe();
-      onActivated();
-      toast("success", "户外助手已启用，现在可以生成第一份今日安排。 ");
-    } catch {
-      toast("error", "暂时无法启用，请稍后再试。 ");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const steps = [
-    { href: "/profile", title: "设置常住地", detail: "之后的建议会采用你所在地的预报。", done: false },
-    { href: "/profile", title: "说明个人情况", detail: "过敏、皮肤、高温耐受和儿童同行等信息，会转换成明确的提醒线。", done: hasNotes },
-    { href: "/activities", title: "确认每周活动", detail: "我们准备了一组示例活动，你可以按实际情况修改。", done: false },
-  ];
-
-  return (
-    <Card className="border border-accent/30">
-      <h2 className="text-sm font-semibold tracking-tight">开始使用 AirAware</h2>
-      <p className="mt-1 text-sm text-ink-2">
-        完成三个简单步骤后再启用；未经你确认，系统不会自动调整活动。
-      </p>
-      <ul className="mt-4 flex flex-col gap-2">
-        {steps.map((s, i) => (
-          <li key={s.title}>
-            <Link
-              href={s.href}
-              className="flex items-start gap-3 rounded-xl border border-hairline px-4 py-3 transition-colors hover:bg-ink/5"
-            >
-              <span
-                className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                  s.done ? "bg-good text-page" : "bg-surface-2 text-ink-muted"
-                }`}
-              >
-                {s.done ? "✓" : i + 1}
-              </span>
-              <span>
-                <span className="block text-sm font-medium">{s.title}</span>
-                <span className="block text-xs text-ink-muted">{s.detail}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="text-xs text-ink-muted">信息确认无误后：</span>
-        <button onClick={activate} disabled={busy} className="btn-primary px-5 py-2 text-sm">
-          {busy ? "正在启用…" : "启用户外助手"}
-        </button>
-      </div>
-    </Card>
-  );
-}
 
 export default function TodayPage() {
   const toast = useToast();
@@ -97,6 +35,17 @@ export default function TodayPage() {
   const [run, setRun] = useState<{ id: string; started: number } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [steerDraft, setSteerDraft] = useState("");
+  // A just-created demo session walks through onboarding once (the demo
+  // page sets this flag right before redirecting here).
+  const [freshDemo, setFreshDemo] = useState(false);
+
+  useEffect(() => {
+    try {
+      // The wizard clears this flag itself when it finishes, so both
+      // language twins can read it (the zh page mounts first).
+      if (sessionStorage.getItem("aa-onboard") === "1") setFreshDemo(true);
+    } catch {}
+  }, []);
 
   const signedOut = !meLoading && me === null;
 
@@ -203,6 +152,16 @@ export default function TodayPage() {
   const handlers = live ? { onAccept, onDecline } : {};
   const needsSetup = live && me !== null && !me.activated;
 
+  // The agent greets and briefs. Everything in this line is real data.
+  const hourNow = parseInt(nowTime.slice(0, 2), 10);
+  const greeting = hourNow < 12 ? "早上好" : hourNow < 18 ? "下午好" : "晚上好";
+  const locationName = live && me ? me.homeLocation.name : HOME.name;
+  const agentLine = activePlan
+    ? `今天是${fmtWeekday(dateIso)}，你在${locationName}。我已检查紫外线、体感温度、空气质量和花粉，今天共有 ${schedule.length} 项活动${
+        proposals.length > 0 ? `，${proposals.length} 项建议等你确认` : "，暂时没有需要你处理的事项"
+      }。`
+    : `今天是${fmtWeekday(dateIso)}，你在${locationName}。我正在关注紫外线、体感温度、空气质量和花粉，随时可以围绕你的 ${schedule.length} 项活动规划今天。`;
+
   if (pendingLive) {
     return (
       <div className="flex flex-col gap-6">
@@ -220,50 +179,56 @@ export default function TodayPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <div className="flex items-center gap-2.5 text-sm text-ink-muted">
-          {fmtWeekday(dateIso)}户外条件
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="font-display text-[32px] font-semibold tracking-tight">{greeting}</h1>
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
               live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
             }`}
           >
             {live ? "实时" : "演示"}
           </span>
-          {live && <span className="text-xs text-ink-muted">{me?.homeLocation.name}</span>}
           {signedOut && (
-            <Link href="/signin" className="text-xs font-medium text-accent hover:underline">
+            <Link href="/signin" className="text-sm font-medium text-accent hover:underline">
               登录后规划你的实际日程 →
             </Link>
           )}
         </div>
+        <p className="mt-2 max-w-3xl text-base leading-relaxed text-ink-2">{agentLine}</p>
+      </header>
 
+      <div className="grid gap-5 xl:grid-cols-12">
+        <div className="flex flex-col gap-5 xl:col-span-7">
         {activePlan ? (
-          <>
-            <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span
-                className={`text-5xl font-semibold tracking-tight ${dayScoreTone(activePlan.dayScore)}`}
-                style={{ fontVariantNumeric: "tabular-nums" }}
-              >
-                {activePlan.dayScore}
-              </span>
-              <span className="text-sm text-ink-muted">今日适宜度 / 100</span>
-              {live && !run && (
-                <button onClick={planMyDay} className="btn-ghost px-3.5 py-1.5 text-xs">
-                  重新规划
-                </button>
+          <div className="banner flex flex-1 flex-wrap items-center gap-x-10 gap-y-6 p-6 sm:p-8">
+            <ScoreRing
+              score={activePlan.dayScore}
+              color="#ffffff"
+              track="rgba(255, 255, 255, 0.28)"
+            />
+            <div className="min-w-0 flex-1 basis-72">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-medium tracking-[0.08em] text-ink-muted">
+                  今日户外适宜度
+                </span>
+                {live && !run && (
+                  <button onClick={planMyDay} className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0d55a5] transition-colors hover:bg-white/90">
+                    重新规划
+                  </button>
+                )}
+              </div>
+              <p className="mt-3 max-w-3xl text-lg leading-relaxed text-white">
+                {activePlan.summary}
+              </p>
+              {activePlan.supersededNote && (
+                <p className="mt-2.5 text-sm text-white/60">{activePlan.supersededNote}</p>
               )}
             </div>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">
-              {activePlan.summary}
-            </p>
-            {activePlan.supersededNote && (
-              <p className="mt-2 text-xs text-ink-muted">{activePlan.supersededNote}</p>
-            )}
-          </>
+          </div>
         ) : (
           !needsSetup &&
           !run && (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="pane flex flex-wrap items-center gap-3 p-6">
               <button onClick={planMyDay} className="btn-primary px-5 py-2.5 text-sm">
                 生成今日安排
               </button>
@@ -275,7 +240,7 @@ export default function TodayPage() {
         )}
 
         {run && (
-          <div className="mt-4 max-w-2xl rounded-2xl bg-surface p-4">
+          <div className="pane p-4">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="font-medium">正在规划今日安排…</span>
               <span className="text-xs text-ink-muted" style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -305,16 +270,16 @@ export default function TodayPage() {
             </div>
           </div>
         )}
-      </header>
+        </div>
 
-      {needsSetup && (
-        <SetupCard hasNotes={Boolean(me?.profile.notes)} onActivated={() => {}} />
-      )}
+        <div className="flex flex-col gap-4 xl:col-span-5">
+        {needsSetup && <Onboarding />}
+        {!needsSetup && freshDemo && live && <Onboarding variant="demo" />}
 
-      {/* The agent, at a glance — always know what it's doing and what it
+      {/* The agent, at a glance. Always know what it's doing and what it
           needs from you. Decisions come before dashboards. */}
       {live && me && !needsSetup && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-hairline px-4 py-2.5 text-xs text-ink-2">
+        <div className="pane flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm text-ink-2">
           <span className="flex items-center gap-1.5 font-medium">
             <span
               aria-hidden
@@ -327,7 +292,7 @@ export default function TodayPage() {
             <span className="text-accent">正在规划…</span>
           ) : proposals.length > 0 ? (
             <span className="font-medium text-accent">
-              有 {proposals.length} 项调整等待确认 ↓
+              有 {proposals.length} 项调整等待确认
             </span>
           ) : activePlan ? (
             <span className="text-ink-muted">暂无待确认事项，今日安排已就绪</span>
@@ -342,41 +307,46 @@ export default function TodayPage() {
 
       {proposals.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">
-            等你确认（{proposals.length}）
-          </h2>
           {proposals.map((item) => (
             <PlanItemCard key={item.id} item={item} {...handlers} />
           ))}
         </section>
       )}
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <ConditionTile label={live ? "紫外线指数 · 当前" : "紫外线指数 · 演示"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} />
-        <ConditionTile label="体感温度" value={fmtTempF(now.apparentF).replace("°C", "")} unit="°C" band={heatBand(now.apparentF)} />
-        <ConditionTile label="空气质量（美国 AQI）" value={String(now.usAqi)} band={aqiBand(now.usAqi)} />
-        <ConditionTile
-          label="花粉指数"
-          value={now.pollen ? now.pollen.index.toFixed(1) : "—"}
-          band={now.pollen ? pollenBand(now.pollen.index) : undefined}
-          noCoverage={now.pollen === null}
-        />
+        </div>
       </div>
 
-      <p className="-mt-2 text-xs text-ink-muted">
-        数据来源：Open-Meteo 天气与空气质量；花粉数据仅覆盖支持的美国邮编。美国 AQI 分级仅供地区演示参考。
-      </p>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[15px] font-semibold tracking-tight">当前状况</h2>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <ConditionTile label={live ? "紫外线指数 · 当前" : "紫外线指数 · 演示"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} trend={hourly.map((h) => h.uvIndex)} kind="uv" />
+        <ConditionTile label="体感温度" value={fmtTempF(now.apparentF).replace("°C", "")} unit="°C" band={heatBand(now.apparentF)} trend={hourly.map((h) => h.apparentF)} kind="heat" />
+        <ConditionTile label="空气质量（美国 AQI）" value={String(now.usAqi)} band={aqiBand(now.usAqi)} trend={hourly.map((h) => h.usAqi)} kind="air" />
+        <ConditionTile
+          label="花粉指数"
+          value={now.pollen ? now.pollen.index.toFixed(1) : "–"}
+          band={now.pollen ? pollenBand(now.pollen.index) : undefined}
+          noCoverage={now.pollen === null}
+          trend={now.pollen ? hourly.map((h) => h.pollen?.index ?? 0) : undefined}
+          kind="pollen"
+        />
+        </div>
+        <p className="text-xs text-ink-muted">
+          数据来源：Open-Meteo 天气与空气质量；花粉数据仅覆盖支持的美国邮编。美国 AQI 分级仅供地区演示参考。
+        </p>
+      </section>
 
-      <Card title="一天中的环境变化" action={<BandLegend />}>
+      <Card title="今天何时适合外出" action={<BandLegend />}>
         <DayTimeline hours={hourly} activities={schedule} nowTime={nowTime} />
       </Card>
 
       {onPlanItems.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">今日安排</h2>
-          {onPlanItems.map((item) => (
-            <PlanItemCard key={item.id} item={item} {...handlers} />
-          ))}
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-2">今日安排</h2>
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            {onPlanItems.map((item) => (
+              <PlanItemCard key={item.id} item={item} {...handlers} />
+            ))}
+          </div>
         </section>
       )}
     </div>

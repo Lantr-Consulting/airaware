@@ -126,7 +126,7 @@ export default function ActivitiesPage() {
               {live ? "实时" : "演示"}
             </span>
           </div>
-          <p className="mt-1 max-w-2xl text-sm text-ink-2">
+          <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-ink-2">
             记录每周固定活动，并说明哪些时间可以调整。可移动的活动会获得更合适的时段建议；
             时间固定的活动则会收到风险和装备提醒。
           </p>

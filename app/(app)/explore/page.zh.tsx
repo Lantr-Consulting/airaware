@@ -125,7 +125,7 @@ export default function ExplorePage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">城市环境</h1>
-        <p className="mt-1 text-sm text-ink-2">
+        <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
           无需登录即可查询任意城市的紫外线、体感温度、空气质量和花粉情况。
         </p>
         <div className="mt-4 flex max-w-md items-center gap-2">
@@ -194,20 +194,21 @@ export default function ExplorePage() {
                     <span
                       key={i}
                       aria-hidden
-                      className={`inline-block size-3 rounded-sm ${CELL_BG[sev]} opacity-90`}
+                      className={`inline-block size-2.5 rounded-full ${CELL_BG[sev]} opacity-90`}
                     />
                   ))}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <ConditionTile label="紫外线指数" value={String(c.current.uvIndex)} band={uvBand(c.current.uvIndex)} />
-                <ConditionTile label="体感温度" value={fmtTempF(c.current.apparentF).replace("°C", "")} unit="°C" band={heatBand(c.current.apparentF)} />
-                <ConditionTile label="空气质量（美国 AQI）" value={String(c.current.usAqi)} band={aqiBand(c.current.usAqi)} />
+                <ConditionTile label="紫外线指数" value={String(c.current.uvIndex)} band={uvBand(c.current.uvIndex)} trend={c.daily.map((d) => d.uvMax)} kind="uv" />
+                <ConditionTile label="体感温度" value={fmtTempF(c.current.apparentF).replace("°C", "")} unit="°C" band={heatBand(c.current.apparentF)} trend={c.daily.map((d) => d.apparentMaxF)} kind="heat" />
+                <ConditionTile label="空气质量（美国 AQI）" value={String(c.current.usAqi)} band={aqiBand(c.current.usAqi)} trend={c.daily.map((d) => d.aqiMax)} kind="air" />
                 <ConditionTile
                   label="花粉指数"
-                  value={c.current.pollenIdx === null ? "—" : c.current.pollenIdx.toFixed(1)}
+                  value={c.current.pollenIdx === null ? "–" : c.current.pollenIdx.toFixed(1)}
                   band={c.current.pollenIdx === null ? undefined : pollenBand(c.current.pollenIdx)}
                   noCoverage={c.current.pollenIdx === null}
+                  kind="pollen"
                 />
               </div>
             </Card>
@@ -220,26 +221,26 @@ export default function ExplorePage() {
           <div>
             <div className="font-medium">紫外线指数（WHO）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              0—2 低 · 3—5 中等 · 6—7 高 · 8—10 很高 · 11 以上极高。
+              0, 2 低 · 3, 5 中等 · 6, 7 高 · 8, 10 很高 · 11 以上极高。
               从中等级别开始就应考虑防护；即使是阴天，紫外线也可能达到这个级别。
             </p>
           </div>
           <div>
             <div className="font-medium">美国 AQI（EPA）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              0—50 优 · 51—100 良 · 101—150 对敏感人群不健康 · 151—200 不健康 ·
+              0, 50 优 · 51, 100 良 · 101, 150 对敏感人群不健康 · 151, 200 不健康 ·
               201 以上非常不健康。活动强度越高，吸入污染物的量也越大。
             </p>
           </div>
           <div>
             <div className="font-medium">体感温度（NWS）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
-              体感低于约 27°C 为舒适；27—32°C 需要注意，32—39°C 需要格外注意，
-              39—51°C 为危险。湿度会显著放大高温带来的风险。
+              体感低于约 27°C 为舒适；27, 32°C 需要注意，32, 39°C 需要格外注意，
+              39, 51°C 为危险。湿度会显著放大高温带来的风险。
             </p>
           </div>
           <div>
-            <div className="font-medium">花粉指数（0—12）</div>
+            <div className="font-medium">花粉指数（0, 12）</div>
             <p className="mt-1 leading-relaxed text-ink-2">
               低于 2.5 为低，4.9 以下为较低，7.3 以下为中等，9.7 以下为较高，超过后为高。
               花粉数据有地区限制；没有可靠数据时，AirAware 会明确说明，不会猜测。

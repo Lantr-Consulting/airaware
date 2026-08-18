@@ -109,7 +109,7 @@ export default function BriefingsPage() {
       setItems((xs) => [...(xs ?? []), { ...created, pastRuns: [] }]);
       setForm(EMPTY_FORM);
       setAdding(false);
-      toast("success", `“${created.title}” is standing — the scheduler picks it up within a minute.`);
+      toast("success", `“${created.title}” is standing. The scheduler picks it up within a minute.`);
     } catch {
       toast("error", "Couldn't save the briefing.");
     } finally {
@@ -139,7 +139,7 @@ export default function BriefingsPage() {
       toast("info", `“${b.title}” removed.`);
     } catch {
       setItems(prev);
-      toast("error", "Couldn't delete — restored it.");
+      toast("error", "Couldn't delete. Restored it.");
     }
   }
 
@@ -163,9 +163,9 @@ export default function BriefingsPage() {
               : x
           ) ?? null
       );
-      toast("success", "Briefing ran — report below.");
+      toast("success", "Briefing ran. Report below.");
     } catch {
-      toast("error", "The briefing run failed — try again.");
+      toast("error", "The briefing run failed. Try again.");
     } finally {
       setRunningId(null);
     }
@@ -185,8 +185,8 @@ export default function BriefingsPage() {
               {live ? "Live" : "Sample"}
             </span>
           </div>
-          <p className="mt-1 max-w-2xl text-sm text-ink-2">
-            Standing instructions the advisor runs on its own — every morning,
+          <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-ink-2">
+            Standing instructions the advisor runs on its own. Every morning,
             every week, or the moment a signal crosses a line you set. The
             scheduler checks every minute.
           </p>
@@ -211,14 +211,14 @@ export default function BriefingsPage() {
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Title — e.g. Morning briefing"
+              placeholder="Title. E.g. Morning briefing"
               className="rounded-lg border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted"
             />
             <textarea
               value={form.prompt}
               onChange={(e) => setForm({ ...form, prompt: e.target.value })}
               rows={2}
-              placeholder="The standing instruction — e.g. Every morning, summarize the day and flag anything risky about my activities."
+              placeholder="The standing instruction. E.g. Every morning, summarize the day and flag anything risky about my activities."
               className="rounded-xl border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted"
             />
             <div className="flex flex-wrap items-center gap-3 text-sm text-ink-2">
@@ -294,7 +294,7 @@ export default function BriefingsPage() {
           {shown.length === 0 && (
             <Card>
               <p className="text-sm text-ink-2">
-                No standing briefings yet — create one and the advisor starts
+                No standing briefings yet. Create one and the advisor starts
                 working without you.
               </p>
             </Card>
@@ -355,7 +355,7 @@ export default function BriefingsPage() {
                   <ul className="mt-3 flex flex-col gap-1 text-xs text-ink-muted">
                     {b.pastRuns.map((r, i) => (
                       <li key={`${r.date}-${i}`}>
-                        <span className="text-ink-2">{fmtDate(r.date)}</span> — {r.summary.replace(/\*\*/g, "")}…
+                        <span className="text-ink-2">{fmtDate(r.date)}</span>. {r.summary.replace(/\*\*/g, "")}…
                       </li>
                     ))}
                   </ul>

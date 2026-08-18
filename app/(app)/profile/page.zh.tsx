@@ -172,7 +172,7 @@ export default function ProfilePage() {
   const signedOut = !loading && me === null;
   const live = me !== null;
 
-  // Adopt the account's values when /me (re)loads — state-during-render
+  // Adopt the account's values when /me (re)loads. State-during-render
   // pattern, so there's no cascading effect.
   const [adoptedMe, setAdoptedMe] = useState<typeof me>(null);
   if (me !== adoptedMe) {
@@ -267,7 +267,7 @@ export default function ProfilePage() {
               {live ? "实时" : "演示"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-2">
+          <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
             用自然语言描述你的个人情况，助手会整理成下方明确的提醒线；未经你确认，不会自动修改活动。
           </p>
           {signedOut && (
@@ -305,7 +305,7 @@ export default function ProfilePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold tracking-tight">确认后启用</h2>
-              <p className="mt-1 max-w-xl text-sm text-ink-2">
+              <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-ink-2">
                 请设置常住地、描述个人情况并检查提醒线。确认准确后再启用；在此之前不会自动生成安排。
               </p>
             </div>

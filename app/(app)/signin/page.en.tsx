@@ -26,7 +26,7 @@ export default function SignInPage() {
     if (error) {
       setError(
         mode === "signin" && error.message.includes("Invalid login credentials")
-          ? "Wrong email or password — or no account yet. Try “Create account”."
+          ? "Wrong email or password. Or no account yet. Try “Create account”."
           : error.message
       );
       setBusy(false);

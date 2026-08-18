@@ -185,7 +185,7 @@ export default function BriefingsPage() {
               {live ? "实时" : "演示"}
             </span>
           </div>
-          <p className="mt-1 max-w-2xl text-sm text-ink-2">
+          <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-ink-2">
             让户外助手按每天、每周或环境指标越线时自动生成简报；调度器每分钟检查一次。
           </p>
           {signedOut && (
@@ -352,7 +352,7 @@ export default function BriefingsPage() {
                   <ul className="mt-3 flex flex-col gap-1 text-xs text-ink-muted">
                     {b.pastRuns.map((r, i) => (
                       <li key={`${r.date}-${i}`}>
-                        <span className="text-ink-2">{fmtDate(r.date)}</span> — {r.summary.replace(/\*\*/g, "")}…
+                        <span className="text-ink-2">{fmtDate(r.date)}</span>. {r.summary.replace(/\*\*/g, "")}…
                       </li>
                     ))}
                   </ul>

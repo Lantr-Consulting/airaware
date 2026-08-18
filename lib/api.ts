@@ -181,7 +181,7 @@ export function getThreadMessages(
 }
 
 // Accept re-checks on the server against the LATEST forecast; a 409 means
-// conditions moved and the window now crosses an avoid line — the error
+// conditions moved and the window now crosses an avoid line. The error
 // carries the freshly annotated item.
 export async function acceptItem(
   id: string,

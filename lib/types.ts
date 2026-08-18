@@ -134,7 +134,7 @@ export type PlanItemKind =
 export type PlanItemSeverity = "info" | "caution" | "alert" | "great";
 
 // proposed → the user accepts or declines (with a reason the planner
-// learns from). Informational items are "auto" — no approval theater.
+// learns from). Informational items are "auto". No approval theater.
 export type PlanItemStatus = "proposed" | "accepted" | "declined" | "auto";
 
 export interface TimeWindow {
@@ -176,7 +176,7 @@ export interface DayPlan {
   status: PlanStatus;
   dayScore: number; // 0–100
   summary: string;
-  supersededNote?: string; // "re-planned 2:10 pm — AQI worsened"
+  supersededNote?: string; // "re-planned 2:10 pm. AQI worsened"
   items: PlanItem[];
 }
 

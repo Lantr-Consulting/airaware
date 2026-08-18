@@ -114,9 +114,9 @@ def conditions(
 
 
 @app.get("/conditions/search")
-def conditions_search(q: str = Query(..., min_length=2)):
+def conditions_search(request: Request, q: str = Query(..., min_length=2)):
     try:
-        return {"results": environment.geocode(q)}
+        return {"results": environment.geocode(q, language=_request_language(request))}
     except Exception as e:
         raise HTTPException(status_code=502, detail="城市搜索服务暂不可用，请稍后重试")
 
@@ -159,9 +159,11 @@ def _demo_seed(language: str) -> tuple[dict, list[dict]]:
     return advisor, activities
 
 
-def _me(user: dict) -> dict:
+def _me(user: dict, language: str = "zh") -> dict:
     if demo.is_demo_user(user):
         defaults, activities = _demo_seed(demo.language_for(user))
+    elif language == "en":
+        defaults, activities = store.DEFAULT_ADVISOR_EN, store.DEFAULT_ACTIVITIES_EN
     else:
         defaults, activities = store.DEFAULT_ADVISOR, store.DEFAULT_ACTIVITIES
     row = db.ensure_advisor(user["id"], user["email"], defaults, activities)
@@ -186,8 +188,8 @@ def _me(user: dict) -> dict:
 
 
 @app.get("/me")
-def me(user: dict = Depends(auth.current_user)):
-    return {**_me(user), "email": user["email"],
+def me(request: Request, user: dict = Depends(auth.current_user)):
+    return {**_me(user, _request_language(request)), "email": user["email"],
             "demo": demo.status(user) if demo.is_demo_user(user) else {"isDemo": False}}
 
 

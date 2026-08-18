@@ -58,10 +58,10 @@ SPECIES_LABEL = {
 }
 
 
-def geocode(query: str, count: int = 5) -> list[dict]:
+def geocode(query: str, count: int = 5, language: str = "zh") -> list[dict]:
     r = requests.get(
         GEO_URL,
-        params={"name": query, "count": count, "language": "zh", "format": "json"},
+        params={"name": query, "count": count, "language": "en" if language == "en" else "zh", "format": "json"},
         timeout=TIMEOUT,
     )
     r.raise_for_status()

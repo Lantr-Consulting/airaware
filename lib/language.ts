@@ -6,8 +6,22 @@ export type Language = "zh" | "en";
 const KEY = "lantr-lang";
 const EVENT = "lantr-language-change";
 
+// Everything must render as zh (the SSR default) until hydration finishes,
+// even when the visitor's cookie says en. Otherwise the hydration render
+// disagrees with the server HTML, React re-renders the root to recover, and
+// that wipes attributes React doesn't own (like the data-theme stamp, which
+// is how English visitors were losing light mode). LanguageBoot flips this
+// right after mount and pings every useLanguage subscriber.
+let hydrated = false;
+
+export function markHydrated() {
+  if (hydrated || typeof window === "undefined") return;
+  hydrated = true;
+  window.dispatchEvent(new Event(EVENT));
+}
+
 export function getLanguage(): Language {
-  if (typeof document === "undefined") return "zh";
+  if (typeof document === "undefined" || !hydrated) return "zh";
   try {
     const cookie = document.cookie.match(/(?:^|; )lantr-lang=(en|zh)/)?.[1];
     if (cookie === "en" || cookie === "zh") return cookie;

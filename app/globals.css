@@ -1,66 +1,34 @@
 @import "tailwindcss";
 
-/* AirAware — dark sky theme, Milestone 1 pass. The band scale is the domain
-   model: severity 0–4 tokens are shared by UV, AQI, heat, and pollen. */
+/* AirAware — clean light dashboard. Neutral canvas, white cards, one
+   brand-blue anchor per page; the severity 0–4 band tokens are the domain
+   model and appear only in data marks (dots, sparklines, ribbon, chips). */
 :root {
-  color-scheme: dark;
-  --page: #0a0f14;
-  --surface: #121a22;
-  --surface-2: #1a242e;
-  --ink: #f2f5f7;
-  --ink-2: #b4bfc9;
-  --ink-muted: #79868f;
-  --grid: #1c2630;
-  --hairline: rgba(255, 255, 255, 0.08);
-
-  --accent: #4cc3ff; /* clear-sky CTA */
-  --accent-contrast: #04121c; /* text on accent surfaces */
-
-  /* Band severity scale, 0 (best) → 4 (worst). Shared by every signal. */
-  --band-0: #2ad46a;
-  --band-1: #f5c542;
-  --band-2: #ff9838;
-  --band-3: #ff5a48;
-  --band-4: #c05df0;
-
-  --good: #2ad46a;
-  --critical: #ff5a48;
-}
-
-/* Light mode — toggled via data-theme on <html>, persisted per device.
-   Band hues keep their identity but darken enough to read on white. */
-:root[data-theme="light"] {
   color-scheme: light;
-  --page: #f6f8fa;
+  --page: #f2f4f6;
   --surface: #ffffff;
-  --surface-2: #edf1f4;
-  --ink: #10181f;
-  --ink-2: #44515b;
-  --ink-muted: #77848e;
-  --grid: #e4e9ed;
+  --surface-2: #e6ebeb;
+  --ink: #131a1d;
+  --ink-2: #46535a;
+  --ink-muted: #75828a;
+  --grid: #e0e6e8;
   --hairline: rgba(16, 24, 32, 0.1);
 
-  --accent: #0b87d0;
+  /* Brand sky blue, sampled from the logo artwork. Green stays reserved
+     for "good air" data. */
+  --accent: #1b7fe0;
   --accent-contrast: #ffffff;
 
-  --band-0: #109c4b;
-  --band-1: #bd8900;
-  --band-2: #dd7108;
-  --band-3: #dd3d31;
-  --band-4: #9a3ecb;
+  /* Band severity scale, 0 (best) → 4 (worst). Stepped for CVD +
+     normal-vision separation (see dataviz validator). */
+  --band-0: #0e8f4d;
+  --band-1: #8d7a10;
+  --band-2: #e0561f;
+  --band-3: #a8170b;
+  --band-4: #8a3ddb;
 
-  --good: #109c4b;
-  --critical: #dd3d31;
-}
-
-:root[data-theme="light"] body {
-  background:
-    radial-gradient(1100px 480px at 72% -12%, rgba(11, 135, 208, 0.06), transparent 60%),
-    var(--page);
-}
-
-:root[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: #c8d0d7;
+  --good: #0e8f4d;
+  --critical: #c03325;
 }
 
 @theme inline {
@@ -83,30 +51,94 @@
   --color-critical: var(--critical);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-space-grotesk);
 }
 
 body {
-  background:
-    radial-gradient(1100px 480px at 72% -12%, rgba(76, 195, 255, 0.07), transparent 60%),
-    var(--page);
+  background: var(--page);
   color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI",
     sans-serif;
   letter-spacing: -0.01em;
 }
 
-/* Sky pill CTA */
+/* Display voice — headings inside the product shell. CJK glyphs fall
+   through to the system stack; Latin gets the grotesk. */
+.app-main h1,
+.app-main h2,
+.font-display {
+  font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Data numerals — the display grotesk, bold and tabular. */
+.num-display {
+  font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Glass pane — the standard card surface: hairline edge, top sheen,
+   deep soft shadow. */
+.pane {
+  border-radius: 1.5rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgba(10, 16, 18, 0.05),
+    0 18px 44px -30px rgba(10, 16, 18, 0.16);
+}
+
+/* Stat tile — a plain card that carries a signal color for its children
+   (icon chip, band dot, sparkline) via --tile. The card itself stays white:
+   one anchor per page, color only in the marks. */
+.tile-aura {
+  --tile: var(--ink-muted);
+  position: relative;
+  border-radius: 1.5rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgba(10, 16, 18, 0.05),
+    0 18px 44px -30px rgba(10, 16, 18, 0.16);
+}
+
+/* The banner — the page's single saturated anchor: brand blue, white ink,
+   headline number and primary action live here. */
+.banner {
+  border-radius: 1.5rem;
+  background: linear-gradient(120deg, #1a72cf, #0d55a5 58%, #0a4a92);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 24px 50px -28px rgba(13, 85, 165, 0.55);
+}
+
+/* Ion pill CTA — lifted with its own light. */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: var(--accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 86%, #ffffff),
+    var(--accent)
+  );
   color: var(--accent-contrast);
   font-weight: 600;
-  transition: filter 0.15s ease, transform 0.05s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 20px -10px color-mix(in oklab, var(--accent) 60%, transparent);
+  transition: filter 0.15s ease, transform 0.05s ease, box-shadow 0.2s ease;
 }
-.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:hover {
+  filter: brightness(1.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 10px 24px -10px color-mix(in oklab, var(--accent) 70%, transparent);
+}
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.45; }
 
@@ -118,10 +150,11 @@ body {
   border: 1px solid var(--hairline);
   color: var(--ink-2);
   font-weight: 500;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .btn-ghost:hover {
   background: color-mix(in oklab, var(--ink) 7%, transparent);
+  border-color: color-mix(in oklab, var(--ink) 18%, transparent);
   color: var(--ink);
 }
 
@@ -139,7 +172,7 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #263340; border-radius: 5px; }
+::-webkit-scrollbar-thumb { background: #c8d0d7; border-radius: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 @keyframes msg-in {
@@ -154,7 +187,7 @@ select:focus-visible {
 
 /* Loading placeholder blocks */
 .skeleton {
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background: linear-gradient(100deg, var(--surface) 40%, var(--surface-2) 50%, var(--surface) 60%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
@@ -357,4 +390,19 @@ select:focus-visible {
     transform: none;
     transition: none;
   }
+}
+
+/* Onboarding motion: the overlay fades up, each step slides in. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.anim-fade-in { animation: fade-in 0.4s ease-out; }
+.anim-step { animation: step-in 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-in, .anim-step { animation: none; }
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { DemoError, startDemo } from "@/lib/demo";
-import { pick, useLanguage } from "@/lib/language";
+import { getLanguage, markHydrated, pick, useLanguage } from "@/lib/language";
 import { supabase } from "@/lib/supabase";
 
 export default function DemoEntry() {
@@ -15,7 +15,14 @@ export default function DemoEntry() {
 
   const enter = useCallback(async (inviteCode?: string) => {
     setBusy(true); setState("starting");
-    try { await startDemo(language, inviteCode); window.location.replace("/today"); }
+    // The auto-start effect can run before LanguageBoot flips the SSR
+    // default, so read the visitor's real language directly.
+    markHydrated();
+    try {
+      await startDemo(getLanguage(), inviteCode);
+      try { sessionStorage.setItem("aa-onboard", "1"); } catch {}
+      window.location.replace("/today");
+    }
     catch (error) { setState(error instanceof DemoError && error.status === 403 ? "invite" : "error"); setBusy(false); }
   }, [language]);
 

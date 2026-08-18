@@ -187,7 +187,7 @@ export default function AdvisorPage() {
               {live ? "Live" : "Sample"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-2">
+          <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
             Ask anything about your plan or the conditions behind it. Every
             answer cites the same numbers the engine checked.
           </p>
@@ -254,7 +254,7 @@ export default function AdvisorPage() {
             >
               <ul className="flex flex-col gap-1">
                 {threads.length === 0 && (
-                  <li className="text-sm text-ink-muted">Nothing yet — say hi.</li>
+                  <li className="text-sm text-ink-muted">Nothing yet. Say hi.</li>
                 )}
                 {threads.map((t) => (
                   <li key={t.id}>

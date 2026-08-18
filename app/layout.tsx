@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { LanguageBoot } from "@/components/language-boot";
 import { ToastProvider } from "@/components/toast";
 
 const geistSans = Geist({
@@ -11,6 +12,12 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Product display voice. Geometric grotesk for headings and the wordmark.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
@@ -37,7 +44,7 @@ export default function RootLayout({
     <html
       lang="zh-CN"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <head>
         <Script
@@ -45,11 +52,12 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html:
-              `try{var t=localStorage.getItem("aa-theme");if(t==="light")document.documentElement.dataset.theme="light";var l=document.cookie.match(/(?:^|; )lantr-lang=(en|zh)/)?.[1]||localStorage.getItem("lantr-lang");document.documentElement.lang=l==="en"?"en":"zh-CN"}catch(e){}`,
+              `try{var l=document.cookie.match(/(?:^|; )lantr-lang=(en|zh)/)?.[1]||localStorage.getItem("lantr-lang");document.documentElement.lang=l==="en"?"en":"zh-CN"}catch(e){}`,
           }}
         />
       </head>
       <body className="min-h-screen">
+        <LanguageBoot />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

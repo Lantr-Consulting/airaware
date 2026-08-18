@@ -17,7 +17,7 @@ function Chip({ label, value, band }: { label: string; value: string; band: Band
     <span className="flex items-center gap-1.5 text-xs">
       <span className="text-ink-muted">{label}</span>
       {band === null ? (
-        <span className="text-ink-muted">—</span>
+        <span className="text-ink-muted">, </span>
       ) : (
         <span className={`flex items-center gap-1 font-medium ${SEVERITY_TEXT[band.severity]}`}>
           <span aria-hidden className="inline-block size-2 rounded-full bg-current" />
@@ -78,7 +78,7 @@ export default function PlannerPage() {
             {live ? "实时" : "演示"}
           </span>
         </div>
-        <p className="mt-1 text-sm text-ink-2">
+        <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
           将每周活动与{live ? ` ${me.homeLocation.name} 的` : ""}七日预报放在一起比较，提前看到需要调整的时段。
         </p>
         {!loading && me === null && (
@@ -134,7 +134,7 @@ export default function PlannerPage() {
                   <Chip label="AQI" value={String(day.aqiMax)} band={aqiBand(day.aqiMax)} />
                   <Chip
                     label="花粉"
-                    value={day.pollen ? day.pollen.index.toFixed(1) : "—"}
+                    value={day.pollen ? day.pollen.index.toFixed(1) : "–"}
                     band={day.pollen ? pollenBand(day.pollen.index) : null}
                   />
                 </div>

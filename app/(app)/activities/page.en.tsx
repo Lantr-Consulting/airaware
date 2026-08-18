@@ -88,7 +88,7 @@ export default function ActivitiesPage() {
       toast("info", `“${a.name}” removed from your week.`);
     } catch {
       setItems(prev);
-      toast("error", "Couldn't delete — restored it.");
+      toast("error", "Couldn't delete. Restored it.");
     }
   }
 
@@ -104,9 +104,9 @@ export default function ActivitiesPage() {
       setItems((xs) => [...xs, created].sort((a, b) => a.startTime.localeCompare(b.startTime)));
       setForm(EMPTY_FORM);
       setAdding(false);
-      toast("success", `“${created.name}” added — the planner sees it on its days.`);
+      toast("success", `“${created.name}” added. The planner sees it on its days.`);
     } catch {
-      toast("error", "Couldn't save the activity — try again.");
+      toast("error", "Couldn't save the activity. Try again.");
     } finally {
       setBusy(false);
     }
@@ -126,7 +126,7 @@ export default function ActivitiesPage() {
               {live ? "Live" : "Sample"}
             </span>
           </div>
-          <p className="mt-1 max-w-2xl text-sm text-ink-2">
+          <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-ink-2">
             The recurring shape of your week. Flexibility is what gives the
             planner room to work: a movable run gets better windows; a fixed
             practice gets warnings and gear instead.
@@ -152,7 +152,7 @@ export default function ActivitiesPage() {
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Name — e.g. Lunchtime walk"
+              placeholder="Name. E.g. Lunchtime walk"
               className="rounded-lg border border-hairline bg-page px-3.5 py-2.5 text-sm placeholder:text-ink-muted sm:col-span-2"
             />
             <label className="flex items-center justify-between gap-3 text-sm text-ink-2">

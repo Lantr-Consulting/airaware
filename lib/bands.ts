@@ -1,5 +1,5 @@
 // Official band scales, mapped onto the shared 0–4 severity used for
-// coloring. These mirror the backend exposure engine from Milestone 4 on —
+// coloring. These mirror the backend exposure engine from Milestone 4 on;
 // the UI never invents a cutoff. Sources: WHO UV index, EPA US AQI
 // breakpoints, NWS heat-index categories, Pollen.com index bands.
 
@@ -80,4 +80,13 @@ export function dayScoreTone(score: number): string {
   if (score >= 55) return "text-band-1";
   if (score >= 35) return "text-band-2";
   return "text-band-3";
+}
+
+// Same thresholds as dayScoreTone, as a raw CSS variable. Tints the
+// halo ring and any other light that follows the score.
+export function dayScoreVar(score: number): string {
+  if (score >= 75) return "var(--band-0)";
+  if (score >= 55) return "var(--band-1)";
+  if (score >= 35) return "var(--band-2)";
+  return "var(--band-3)";
 }

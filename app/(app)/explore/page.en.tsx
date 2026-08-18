@@ -33,9 +33,9 @@ export default function ExplorePage() {
     try {
       await patchSettings({ homeLocation: loc });
       invalidateMe();
-      toast("success", `Home set to ${loc.name} — Today and the planner follow.`);
+      toast("success", `Home set to ${loc.name}. Today and the planner follow.`);
     } catch {
-      toast("error", "Couldn't set home — try again.");
+      toast("error", "Couldn't set home. Try again.");
     }
   }
 
@@ -109,7 +109,7 @@ export default function ExplorePage() {
       setCards((prev) => [card, ...prev.filter((c) => c.location.name !== top.name)]);
       setQuery("");
     } catch {
-      setNotice("Search is unavailable right now — showing sample cities.");
+      setNotice("Search is unavailable right now. Showing sample cities.");
     } finally {
       setSearching(false);
     }
@@ -124,8 +124,8 @@ export default function ExplorePage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Explore</h1>
-        <p className="mt-1 text-sm text-ink-2">
-          Conditions anywhere — no account needed. Search any city on Earth for
+        <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
+          Conditions anywhere. No account needed. Search any city on Earth for
           its UV, heat, air, and pollen picture.
         </p>
         <div className="mt-4 flex max-w-md items-center gap-2">
@@ -133,7 +133,7 @@ export default function ExplorePage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && runSearch()}
-            placeholder={offline ? "Backend offline — filtering samples…" : "Search any city…"}
+            placeholder={offline ? "Backend offline. Filtering samples…" : "Search any city…"}
             className="flex-1 rounded-full border border-hairline bg-surface px-4 py-2.5 text-sm placeholder:text-ink-muted"
           />
           <button
@@ -147,7 +147,7 @@ export default function ExplorePage() {
         {notice && <p className="mt-2 text-xs text-ink-muted">{notice}</p>}
         {offline && (
           <p className="mt-2 text-xs text-ink-muted">
-            The conditions backend isn&apos;t reachable — these cards are sample
+            The conditions backend isn&apos;t reachable. These cards are sample
             data until it comes back.
           </p>
         )}
@@ -195,20 +195,21 @@ export default function ExplorePage() {
                     <span
                       key={i}
                       aria-hidden
-                      className={`inline-block size-3 rounded-sm ${CELL_BG[sev]} opacity-90`}
+                      className={`inline-block size-2.5 rounded-full ${CELL_BG[sev]} opacity-90`}
                     />
                   ))}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <ConditionTile label="UV index" value={String(c.current.uvIndex)} band={uvBand(c.current.uvIndex)} />
-                <ConditionTile label="Feels like" value={String(c.current.apparentF)} unit="°F" band={heatBand(c.current.apparentF)} />
-                <ConditionTile label="US AQI" value={String(c.current.usAqi)} band={aqiBand(c.current.usAqi)} />
+                <ConditionTile label="UV index" value={String(c.current.uvIndex)} band={uvBand(c.current.uvIndex)} trend={c.daily.map((d) => d.uvMax)} kind="uv" />
+                <ConditionTile label="Feels like" value={String(c.current.apparentF)} unit="°F" band={heatBand(c.current.apparentF)} trend={c.daily.map((d) => d.apparentMaxF)} kind="heat" />
+                <ConditionTile label="US AQI" value={String(c.current.usAqi)} band={aqiBand(c.current.usAqi)} trend={c.daily.map((d) => d.aqiMax)} kind="air" />
                 <ConditionTile
                   label="Pollen"
-                  value={c.current.pollenIdx === null ? "—" : c.current.pollenIdx.toFixed(1)}
+                  value={c.current.pollenIdx === null ? "–" : c.current.pollenIdx.toFixed(1)}
                   band={c.current.pollenIdx === null ? undefined : pollenBand(c.current.pollenIdx)}
                   noCoverage={c.current.pollenIdx === null}
+                  kind="pollen"
                 />
               </div>
             </Card>
@@ -246,7 +247,7 @@ export default function ExplorePage() {
             <div className="font-medium">Pollen (0–12 index)</div>
             <p className="mt-1 leading-relaxed text-ink-2">
               Under 2.5 Low · to 4.9 Low–medium · to 7.3 Medium · to 9.7
-              Medium–high · above that High. Coverage is regional — where
+              Medium–high · above that High. Coverage is regional. Where
               there&apos;s no data, AirAware says so instead of guessing.
             </p>
           </div>

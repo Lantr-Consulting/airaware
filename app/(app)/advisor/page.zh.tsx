@@ -187,7 +187,7 @@ export default function AdvisorPage() {
               {live ? "实时" : "演示"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-2">
+          <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
             可以询问活动安排及其背后的环境条件；回答会引用评估时使用的同一组数据。
           </p>
           {signedOut && (

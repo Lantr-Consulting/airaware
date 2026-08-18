@@ -1,4 +1,4 @@
-// Milestone 1 mock data — one coherent week for a fixture user in Austin,
+// Milestone 1 mock data. One coherent week for a fixture user in Austin,
 // TX, shaped exactly like the records the backend will return. Numbers are
 // hand-checked against the band scales in lib/bands.ts so every screen
 // renders honestly. "Today" is pinned so the UI is deterministic.
@@ -43,9 +43,9 @@ export const ADVISOR: Advisor = {
       "Trains for a 10K in October. Prefers mornings but not before 6:30. Dog needs a real walk every evening.",
   },
   thresholds: {
-    uvProtect: 3, // skin type II — protection starts at Moderate
+    uvProtect: 3, // skin type II. Protection starts at Moderate
     uvAvoid: 8,
-    aqiCaution: 100, // grass/ragweed allergies — flag hard efforts early
+    aqiCaution: 100, // grass/ragweed allergies. Flag hard efforts early
     aqiAvoid: 150,
     heatCautionF: 95,
     heatAvoidF: 103,
@@ -216,20 +216,20 @@ export const PLANS: DayPlan[] = [
     dayScore: 58,
     summary:
       "A classic late-July scorcher: the morning is genuinely good, the afternoon is a Danger-band heat sandwich (feels like 106°F, 2–5 pm), and air quality drifts into the ozone yellow zone by mid-afternoon. Front-load anything outdoors.",
-    supersededNote: "Re-planned 6:02 am — tonight's heat lingers longer than yesterday's forecast showed.",
+    supersededNote: "Re-planned 6:02 am. Tonight's heat lingers longer than yesterday's forecast showed.",
     items: [
       {
         id: "i1",
         activityId: "a1",
         kind: "keep",
-        title: "Morning run, 7:00 — conditions are on your side",
+        title: "Morning run, 7:00. Conditions are on your side",
         rationale:
           "UV 1 (Low), feels like 82°F, AQI 54 (Moderate but well under your 100 cutoff). Best running hour of the day.",
         window: { start: "07:00", end: "07:45" },
         checks: [
-          { rule: "uv_band", detail: "UV 1 — Low, no protection required", value: 1, band: "Low", thresholdSource: "who_uv", pass: true },
-          { rule: "heat_index", detail: "Feels like 82°F — under your 95°F caution line", value: 82, band: "Comfortable", thresholdSource: "user_heat_caution", pass: true },
-          { rule: "aqi_intensity", detail: "AQI 54 at high intensity — under your 100 line", value: 54, band: "Moderate", thresholdSource: "user_aqi_caution", pass: true },
+          { rule: "uv_band", detail: "UV 1. Low, no protection required", value: 1, band: "Low", thresholdSource: "who_uv", pass: true },
+          { rule: "heat_index", detail: "Feels like 82°F. Under your 95°F caution line", value: 82, band: "Comfortable", thresholdSource: "user_heat_caution", pass: true },
+          { rule: "aqi_intensity", detail: "AQI 54 at high intensity. Under your 100 line", value: 54, band: "Moderate", thresholdSource: "user_aqi_caution", pass: true },
         ],
         severity: "info",
         status: "auto",
@@ -241,10 +241,10 @@ export const PLANS: DayPlan[] = [
         kind: "gear",
         title: "Sunscreen + sleeves for the ride home",
         rationale:
-          "Your 8:30 ride out is UV 3 — right at your protection line (skin type II). The ride home near 5:30 pm is the bigger deal: UV 4 with 25 minutes of full sun.",
+          "Your 8:30 ride out is UV 3. Right at your protection line (skin type II). The ride home near 5:30 pm is the bigger deal: UV 4 with 25 minutes of full sun.",
         window: { start: "17:30", end: "17:55" },
         checks: [
-          { rule: "uv_band", detail: "UV 3–4 across both rides — at or above your protect-at-3 rule", value: 4, band: "Moderate", thresholdSource: "skin_type_2", pass: false },
+          { rule: "uv_band", detail: "UV 3–4 across both rides. At or above your protect-at-3 rule", value: 4, band: "Moderate", thresholdSource: "skin_type_2", pass: false },
         ],
         severity: "caution",
         status: "auto",
@@ -255,10 +255,10 @@ export const PLANS: DayPlan[] = [
         kind: "warning",
         title: "Danger-band heat, 2–5 pm",
         rationale:
-          "Feels-like peaks at 106°F — NWS Danger category. Anything strenuous outdoors in this window is a bad trade. Start hydrating before the evening and keep water with you.",
+          "Feels-like peaks at 106°F. NWS Danger category. Anything strenuous outdoors in this window is a bad trade. Start hydrating before the evening and keep water with you.",
         window: { start: "14:00", end: "17:00" },
         checks: [
-          { rule: "heat_index", detail: "Feels like 106°F — Danger band, above your 103°F avoid line", value: 106, band: "Danger", thresholdSource: "nws_heat", pass: false },
+          { rule: "heat_index", detail: "Feels like 106°F. Danger band, above your 103°F avoid line", value: 106, band: "Danger", thresholdSource: "nws_heat", pass: false },
         ],
         severity: "alert",
         status: "auto",
@@ -270,12 +270,12 @@ export const PLANS: DayPlan[] = [
         kind: "shift",
         title: "Push the dog walk to 8:45 pm",
         rationale:
-          "At 8:00 it still feels like 96°F — over your caution line, and hot pavement for paws. By 8:45 it drops to 92°F with the sun fully down.",
+          "At 8:00 it still feels like 96°F, over your caution line, and the pavement stays hot for paws. By 8:45 it drops to 92°F with the sun fully down.",
         originalWindow: { start: "20:00", end: "20:30" },
         window: { start: "20:45", end: "21:15" },
         checks: [
-          { rule: "heat_index", detail: "96°F at 8:00 pm — above your 95°F caution line", value: 96, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: false },
-          { rule: "heat_index", detail: "92°F by 8:45 pm — back under the line", value: 92, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: true },
+          { rule: "heat_index", detail: "96°F at 8:00 pm. Above your 95°F caution line", value: 96, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: false },
+          { rule: "heat_index", detail: "92°F by 8:45 pm. Back under the line", value: 92, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: true },
         ],
         severity: "caution",
         status: "proposed",
@@ -316,8 +316,8 @@ export const PLANS: DayPlan[] = [
         originalWindow: { start: "09:00", end: "12:00" },
         window: { start: "07:00", end: "10:00" },
         checks: [
-          { rule: "uv_band", detail: "UV reaches 9 (Very high) by 11 am — above your avoid-at-8 line", value: 9, band: "Very high", thresholdSource: "user_uv_avoid", pass: false },
-          { rule: "heat_index", detail: "Feels like 100°F by noon — above your 95°F caution line", value: 100, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: false },
+          { rule: "uv_band", detail: "UV reaches 9 (Very high) by 11 am. Above your avoid-at-8 line", value: 9, band: "Very high", thresholdSource: "user_uv_avoid", pass: false },
+          { rule: "heat_index", detail: "Feels like 100°F by noon. Above your 95°F caution line", value: 100, band: "Extreme caution", thresholdSource: "user_heat_caution", pass: false },
           { rule: "window_score", detail: "7–10 am window passes every check", value: null, band: "OK", thresholdSource: "exposure_engine", pass: true },
         ],
         severity: "caution",
@@ -330,7 +330,7 @@ export const PLANS: DayPlan[] = [
         kind: "relocate",
         title: "Or: trade the exposed ridge for the creek loop",
         rationale:
-          "If 7:00 is too early, the Barton Creek greenbelt loop is ~70% shaded — it buys you roughly two extra tolerable hours vs. the ridge trail.",
+          "If 7:00 is too early, the Barton Creek greenbelt loop is ~70% shaded. It buys you roughly two extra tolerable hours vs. the ridge trail.",
         window: { start: "08:00", end: "11:00" },
         checks: [
           { rule: "uv_band", detail: "Shade cover cuts effective exposure below your protect line for most of the loop", value: 6, band: "High", thresholdSource: "skin_type_2", pass: true },
@@ -354,15 +354,15 @@ export const PLANS: DayPlan[] = [
         activityId: "a3",
         kind: "shorten",
         title: "Cut practice to 60 minutes",
-        rationale: "Feels-like was 104°F at 5:30 pm — above your avoid line. Declined; coach shifted the whole practice 30 minutes later instead.",
+        rationale: "Feels-like was 104°F at 5:30 pm. Above your avoid line. Declined; coach shifted the whole practice 30 minutes later instead.",
         originalWindow: { start: "17:30", end: "19:00" },
         window: { start: "17:30", end: "18:30" },
         checks: [
-          { rule: "heat_index", detail: "104°F at kickoff — above your 103°F avoid line", value: 104, band: "Danger", thresholdSource: "user_heat_avoid", pass: false },
+          { rule: "heat_index", detail: "104°F at kickoff. Above your 103°F avoid line", value: 104, band: "Danger", thresholdSource: "user_heat_avoid", pass: false },
         ],
         severity: "alert",
         status: "declined",
-        feedback: { reason: "Can't shorten team practice — flag it earlier so I can ask the coach to move it instead." },
+        feedback: { reason: "Can't shorten team practice. Flag it earlier so I can ask the coach to move it instead." },
         evidence: ["Thursday hourly forecast (mock)"],
       },
     ],
@@ -380,7 +380,7 @@ export const PLAN_RUNS: PlanRun[] = [
     startedAt: `${TODAY}T06:02:00`,
     dates: [TODAY, "2026-08-01"],
     report:
-      "Re-planned today and tomorrow. Kept the 7 am run, proposed pushing the dog walk to 8:45 pm, and flagged Saturday's hike — two options proposed.",
+      "Re-planned today and tomorrow. Kept the 7 am run, proposed pushing the dog walk to 8:45 pm, and flagged Saturday's hike. Two options proposed.",
   },
 ];
 
@@ -405,14 +405,14 @@ export const MESSAGES: Message[] = [
     threadId: "t1",
     role: "assistant",
     content:
-      "I'd skip it. Right now it's **UV 10 (Very high)** and feels like **103°F** — that's over your 95°F caution line **and** at your UV avoid line, at high intensity. The engine scores the lunch window 12/100 for a run.\n\nTwo windows that do pass every check:\n\n- **Tonight 8:45–9:30 pm** — feels like 92°F, UV 0, AQI back down to ~70\n- **Tomorrow 6:30–7:15 am** — the best slot in the next 36 hours\n\nWant me to pencil in tonight?",
+      "I'd skip it. Right now it's **UV 10 (Very high)** and feels like **103°F**. That's over your 95°F caution line **and** at your UV avoid line, at high intensity. The engine scores the lunch window 12/100 for a run.\n\nTwo windows that do pass every check:\n\n- **Tonight 8:45–9:30 pm**. Feels like 92°F, UV 0, AQI back down to ~70\n- **Tomorrow 6:30–7:15 am**. The best slot in the next 36 hours\n\nWant me to pencil in tonight?",
     createdAt: `${TODAY}T12:41:00`,
   },
   {
     id: "m3",
     threadId: "t2",
     role: "user",
-    content: "It's overcast today — do I really need sunscreen for the ride in?",
+    content: "It's overcast today. Do I really need sunscreen for the ride in?",
     createdAt: "2026-07-29T18:20:00",
   },
   {
@@ -438,11 +438,11 @@ export const BRIEFINGS: Briefing[] = [
     enabled: true,
     lastRunAt: `${TODAY}T07:00:00`,
     latestReport:
-      "**Friday, day score 58.** Run at 7 is a green light. Ride home needs sunscreen + sleeves (UV 4). Danger-band heat 2–5 pm — nothing strenuous outside. Dog walk: proposal pending to push it to 8:45 pm. Best window: 6:30–8:30 am.",
+      "**Friday, day score 58.** Run at 7 is a green light. Ride home needs sunscreen + sleeves (UV 4). Danger-band heat 2–5 pm. Nothing strenuous outside. Dog walk: proposal pending to push it to 8:45 pm. Best window: 6:30–8:30 am.",
     pastRuns: [
-      { date: "2026-07-30", summary: "Day score 61 — practice heat flag, declined shorten, morning all clear." },
-      { date: "2026-07-29", summary: "Day score 66 — overcast but UV 4; sunscreen rule fired anyway." },
-      { date: "2026-07-28", summary: "Day score 71 — best morning of the week, long run suggested and taken." },
+      { date: "2026-07-30", summary: "Day score 61. Practice heat flag, declined shorten, morning all clear." },
+      { date: "2026-07-29", summary: "Day score 66. Overcast but UV 4; sunscreen rule fired anyway." },
+      { date: "2026-07-28", summary: "Day score 71. Best morning of the week, long run suggested and taken." },
     ],
   },
   {
@@ -455,8 +455,8 @@ export const BRIEFINGS: Briefing[] = [
     enabled: true,
     lastRunAt: "2026-07-26T15:20:00",
     latestReport:
-      "AQI hit 104 (USG) at 3 pm Sunday. Garden shift had already ended — no changes needed. Evening dog walk cleared at AQI 88 by 8 pm.",
-    pastRuns: [{ date: "2026-07-26", summary: "USG ozone afternoon — no schedule impact." }],
+      "AQI hit 104 (USG) at 3 pm Sunday. Garden shift had already ended. No changes needed. Evening dog walk cleared at AQI 88 by 8 pm.",
+    pastRuns: [{ date: "2026-07-26", summary: "USG ozone afternoon. No schedule impact." }],
   },
   {
     id: "b3",

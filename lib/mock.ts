@@ -1,4 +1,4 @@
-// Milestone 1 mock data — one coherent week for a fixture user in Austin,
+// Milestone 1 mock data. One coherent week for a fixture user in Austin,
 // TX, shaped exactly like the records the backend will return. Numbers are
 // hand-checked against the band scales in lib/bands.ts so every screen
 // renders honestly. "Today" is pinned so the UI is deterministic.
@@ -43,9 +43,9 @@ export const ADVISOR: Advisor = {
       "正在为 10 月的 10 公里跑步训练。偏好早晨，但不希望早于 6:30；每天晚上要遛狗。",
   },
   thresholds: {
-    uvProtect: 3, // skin type II — protection starts at Moderate
+    uvProtect: 3, // skin type II. Protection starts at Moderate
     uvAvoid: 8,
-    aqiCaution: 100, // grass/ragweed allergies — flag hard efforts early
+    aqiCaution: 100, // grass/ragweed allergies. Flag hard efforts early
     aqiAvoid: 150,
     heatCautionF: 95,
     heatAvoidF: 103,
@@ -215,7 +215,7 @@ export const PLANS: DayPlan[] = [
     status: "active",
     dayScore: 58,
     summary:
-      "7 月末的典型炎热天气：早晨适合外出；14:00—17:00 体感最高约 41°C，达到危险等级，午后空气质量也会逐渐下降。今天的户外活动尽量安排在早上。",
+      "7 月末的典型炎热天气：早晨适合外出；14:00, 17:00 体感最高约 41°C，达到危险等级，午后空气质量也会逐渐下降。今天的户外活动尽量安排在早上。",
     supersededNote: "06:02 已重新规划：最新预报显示，今晚的高温消退得比昨天预计更慢。",
     items: [
       {
@@ -244,7 +244,7 @@ export const PLANS: DayPlan[] = [
           "08:30 出发时紫外线指数为 3，刚好达到你的防护线（皮肤类型 II）。17:30 回程时紫外线指数约 4，并会连续暴露约 25 分钟，更需要注意。",
         window: { start: "17:30", end: "17:55" },
         checks: [
-          { rule: "uv_band", detail: "两段骑行的紫外线指数为 3—4，达到或超过你的防护线", value: 4, band: "中等", thresholdSource: "皮肤类型 II", pass: false },
+          { rule: "uv_band", detail: "两段骑行的紫外线指数为 3, 4，达到或超过你的防护线", value: 4, band: "中等", thresholdSource: "皮肤类型 II", pass: false },
         ],
         severity: "caution",
         status: "auto",
@@ -253,7 +253,7 @@ export const PLANS: DayPlan[] = [
       {
         id: "i3",
         kind: "warning",
-        title: "14:00—17:00 高温达到危险等级",
+        title: "14:00, 17:00 高温达到危险等级",
         rationale:
           "体感最高约 41°C，达到 NWS“危险”等级。这段时间不适合进行剧烈户外活动；晚间出门前应提前补水，并随身带水。",
         window: { start: "14:00", end: "17:00" },
@@ -284,7 +284,7 @@ export const PLANS: DayPlan[] = [
       {
         id: "i5",
         kind: "good_window",
-        title: "最佳户外时段：06:30—08:30",
+        title: "最佳户外时段：06:30, 08:30",
         rationale:
           "紫外线较低，体感低于 29°C，AQI 在 50 左右，花粉浓度较低。今天若还有其他户外事项，优先放在这段时间。",
         window: { start: "06:30", end: "08:30" },
@@ -318,7 +318,7 @@ export const PLANS: DayPlan[] = [
         checks: [
           { rule: "uv_band", detail: "11:00 紫外线指数达到 9（很高），超过你设定的 8 避免线", value: 9, band: "很高", thresholdSource: "个人紫外线避免线", pass: false },
           { rule: "heat_index", detail: "中午体感约 38°C，高于你设定的 35°C 提醒线", value: 100, band: "需要格外注意", thresholdSource: "个人高温提醒", pass: false },
-          { rule: "window_score", detail: "07:00—10:00 时段通过全部检查", value: null, band: "尚可", thresholdSource: "综合暴露评估", pass: true },
+          { rule: "window_score", detail: "07:00, 10:00 时段通过全部检查", value: null, band: "尚可", thresholdSource: "综合暴露评估", pass: true },
         ],
         severity: "caution",
         status: "proposed",
@@ -405,7 +405,7 @@ export const MESSAGES: Message[] = [
     threadId: "t1",
     role: "assistant",
     content:
-      "不建议。现在的**紫外线指数是 10（很高）**，体感约 **39°C**，既超过你设定的 35°C 提醒线，也达到紫外线避免线；午休时段的跑步综合评分只有 12/100。\n\n有两个时段通过了全部检查：\n\n- **今晚 20:45—21:30**：体感约 33°C，紫外线指数 0，AQI 降回约 70\n- **明天 06:30—07:15**：未来 36 小时内最合适的时段\n\n要把今晚这段时间加入计划吗？",
+      "不建议。现在的**紫外线指数是 10（很高）**，体感约 **39°C**，既超过你设定的 35°C 提醒线，也达到紫外线避免线；午休时段的跑步综合评分只有 12/100。\n\n有两个时段通过了全部检查：\n\n- **今晚 20:45, 21:30**：体感约 33°C，紫外线指数 0，AQI 降回约 70\n- **明天 06:30, 07:15**：未来 36 小时内最合适的时段\n\n要把今晚这段时间加入计划吗？",
     createdAt: `${TODAY}T12:41:00`,
   },
   {
@@ -438,7 +438,7 @@ export const BRIEFINGS: Briefing[] = [
     enabled: true,
     lastRunAt: `${TODAY}T07:00:00`,
     latestReport:
-      "**周五，当天评分 58。** 07:00 晨跑条件合适。下班骑行需准备防晒霜和长袖（紫外线指数 4）。14:00—17:00 高温达到危险等级，不安排剧烈户外活动。遛狗建议推迟到 20:45，等待确认。最佳时段为 06:30—08:30。",
+      "**周五，当天评分 58。** 07:00 晨跑条件合适。下班骑行需准备防晒霜和长袖（紫外线指数 4）。14:00, 17:00 高温达到危险等级，不安排剧烈户外活动。遛狗建议推迟到 20:45，等待确认。最佳时段为 06:30, 08:30。",
     pastRuns: [
       { date: "2026-07-30", summary: "当天评分 61：训练遇到高温提醒，缩短建议未采用；早晨条件良好。" },
       { date: "2026-07-29", summary: "当天评分 66：虽然阴天，紫外线指数仍为 4，防晒提醒照常触发。" },

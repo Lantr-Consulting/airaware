@@ -38,7 +38,7 @@ export function persistLang(lang: Lang) {
   } catch {}
 }
 
-/** Two-tab language pill — 中文 / EN. */
+/** Two-tab language pill. 中文 / EN. */
 export function LangToggle({
   lang,
   onChange,

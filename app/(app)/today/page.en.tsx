@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BandLegend, DayTimeline } from "@/components/day-timeline";
 import { PlanItemCard } from "@/components/plan-item-card";
-import { Card, ConditionTile } from "@/components/ui";
+import { Card, ConditionTile, ScoreRing } from "@/components/ui";
+import { Onboarding } from "@/components/onboarding";
 import { useToast } from "@/components/toast";
-import { aqiBand, dayScoreTone, heatBand, pollenBand, uvBand } from "@/lib/bands";
+import { aqiBand, heatBand, pollenBand, uvBand } from "@/lib/bands";
 import {
   acceptItem,
   declineItem,
@@ -15,77 +16,14 @@ import {
   getRun,
   getTodayPlan,
   listActivities,
-  patchSettings,
   steerRun,
   type LiveConditions,
 } from "@/lib/api";
 import { fmtWeekday } from "@/lib/format";
-import { ACTIVITIES, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock.en";
+import { ACTIVITIES, HOME, NOW_HHMM, TODAY, TODAY_HOURLY, TODAY_PLAN } from "@/lib/mock.en";
 import { activitiesOn } from "@/lib/schedule";
 import { invalidateMe, useMe } from "@/lib/use-me";
 import type { Activity, DayPlan, PlanItem } from "@/lib/types";
-
-function SetupCard({ hasNotes, onActivated }: { hasNotes: boolean; onActivated: () => void }) {
-  const toast = useToast();
-  const [busy, setBusy] = useState(false);
-
-  async function activate() {
-    setBusy(true);
-    try {
-      await patchSettings({ activated: true });
-      invalidateMe();
-      onActivated();
-      toast("success", "Advisor activated — planning your first day is one click away.");
-    } catch {
-      toast("error", "Couldn't activate — try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const steps = [
-    { href: "/profile", title: "Set your home location", detail: "Plans will use the forecast for your area.", done: false },
-    { href: "/profile", title: "Describe yourself", detail: "Allergies, skin, heat, kids — plain English becomes enforced limits.", done: hasNotes },
-    { href: "/activities", title: "Review your week", detail: "We seeded a starter week — make it yours.", done: false },
-  ];
-
-  return (
-    <Card className="border border-accent/30">
-      <h2 className="text-sm font-semibold tracking-tight">Welcome to AirAware</h2>
-      <p className="mt-1 text-sm text-ink-2">
-        Three quick steps, then activate. Nothing plans until you bless it.
-      </p>
-      <ul className="mt-4 flex flex-col gap-2">
-        {steps.map((s, i) => (
-          <li key={s.title}>
-            <Link
-              href={s.href}
-              className="flex items-start gap-3 rounded-xl border border-hairline px-4 py-3 transition-colors hover:bg-ink/5"
-            >
-              <span
-                className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                  s.done ? "bg-good text-page" : "bg-surface-2 text-ink-muted"
-                }`}
-              >
-                {s.done ? "✓" : i + 1}
-              </span>
-              <span>
-                <span className="block text-sm font-medium">{s.title}</span>
-                <span className="block text-xs text-ink-muted">{s.detail}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="text-xs text-ink-muted">Looks like you? Then:</span>
-        <button onClick={activate} disabled={busy} className="btn-primary px-5 py-2 text-sm">
-          {busy ? "Activating…" : "Activate my advisor"}
-        </button>
-      </div>
-    </Card>
-  );
-}
 
 export default function TodayPage() {
   const toast = useToast();
@@ -97,6 +35,17 @@ export default function TodayPage() {
   const [run, setRun] = useState<{ id: string; started: number } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [steerDraft, setSteerDraft] = useState("");
+  // A just-created demo session walks through onboarding once (the demo
+  // page sets this flag right before redirecting here).
+  const [freshDemo, setFreshDemo] = useState(false);
+
+  useEffect(() => {
+    try {
+      // The wizard clears this flag itself when it finishes, so both
+      // language twins can read it (the zh page mounts first).
+      if (sessionStorage.getItem("aa-onboard") === "1") setFreshDemo(true);
+    } catch {}
+  }, []);
 
   const signedOut = !meLoading && me === null;
 
@@ -130,8 +79,8 @@ export default function TodayPage() {
       toast(
         "error",
         e instanceof Error && e.message.includes("in flight")
-          ? "A plan run is already in flight — steer it or wait."
-          : "Couldn't start the planner — try again in a moment."
+          ? "A plan run is already in flight. Steer it or wait."
+          : "Couldn't start the planner. Try again in a moment."
       );
     }
   }
@@ -147,11 +96,11 @@ export default function TodayPage() {
           setRun(null);
           setElapsed(0);
           setPlan(await getTodayPlan());
-          toast("success", "Your day is planned — every item measured by the engine.");
+          toast("success", "Your day is planned. Every item measured by the engine.");
         } else if (status.status === "error") {
           setRun(null);
           setElapsed(0);
-          toast("error", "The planner hit an error — try again in a moment.");
+          toast("error", "The planner hit an error. Try again in a moment.");
         }
       } catch {}
     }, 3000);
@@ -164,7 +113,7 @@ export default function TodayPage() {
     try {
       await steerRun(run.id, note);
       setSteerDraft("");
-      toast("info", "Noted — the planner reads steering on its next run.");
+      toast("info", "Noted. The planner reads steering on its next run.");
     } catch {
       toast("error", "Couldn't save the note.");
     }
@@ -179,14 +128,14 @@ export default function TodayPage() {
   async function onAccept(item: PlanItem): Promise<string | null> {
     const { item: updated, blocked } = await acceptItem(item.id);
     replaceItem(updated);
-    if (blocked) toast("error", "Conditions moved — the engine re-checked and this window no longer clears.");
-    else toast("success", "Accepted — it's on your plan.");
+    if (blocked) toast("error", "Conditions moved. The engine re-checked and this window no longer clears.");
+    else toast("success", "Accepted. It's on your plan.");
     return blocked;
   }
 
   async function onDecline(item: PlanItem, reason: string): Promise<void> {
     replaceItem(await declineItem(item.id, reason));
-    toast("info", "Noted — the planner treats your reason as a standing lesson.");
+    toast("info", "Noted. The planner treats your reason as a standing lesson.");
   }
 
   // ----- pick live or sample data -----
@@ -202,6 +151,19 @@ export default function TodayPage() {
   const onPlanItems = activePlan?.items.filter((i) => i.status !== "proposed") ?? [];
   const handlers = live ? { onAccept, onDecline } : {};
   const needsSetup = live && me !== null && !me.activated;
+
+  // The agent greets and briefs. Everything in this line is real data.
+  const hourNow = parseInt(nowTime.slice(0, 2), 10);
+  const greeting = hourNow < 12 ? "Good morning" : hourNow < 18 ? "Good afternoon" : "Good evening";
+  const locationName = live && me ? me.homeLocation.name : HOME.name;
+  const actWord = schedule.length === 1 ? "activity" : "activities";
+  const agentLine = activePlan
+    ? `It's ${fmtWeekday(dateIso)} in ${locationName}. I've checked UV, heat, air quality, and pollen. You have ${schedule.length} ${actWord} today${
+        proposals.length > 0
+          ? `, and ${proposals.length} ${proposals.length === 1 ? "suggestion is" : "suggestions are"} waiting on you`
+          : ", and nothing needs your attention"
+      }.`
+    : `It's ${fmtWeekday(dateIso)} in ${locationName}. I'm watching UV, heat, air quality, and pollen, ready to plan the day around your ${schedule.length} ${actWord}.`;
 
   if (pendingLive) {
     return (
@@ -220,50 +182,56 @@ export default function TodayPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <div className="flex items-center gap-2.5 text-sm text-ink-muted">
-          {fmtWeekday(dateIso)}&apos;s outlook
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="font-display text-[32px] font-semibold tracking-tight">{greeting}</h1>
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
               live ? "bg-good/10 text-good" : "bg-ink/10 text-ink-muted"
             }`}
           >
             {live ? "Live" : "Sample"}
           </span>
-          {live && <span className="text-xs text-ink-muted">{me?.homeLocation.name}</span>}
           {signedOut && (
-            <Link href="/signin" className="text-xs font-medium text-accent hover:underline">
+            <Link href="/signin" className="text-sm font-medium text-accent hover:underline">
               Sign in to plan your real day →
             </Link>
           )}
         </div>
+        <p className="mt-2 max-w-3xl text-base leading-relaxed text-ink-2">{agentLine}</p>
+      </header>
 
+      <div className="grid gap-5 xl:grid-cols-12">
+        <div className="flex flex-col gap-5 xl:col-span-7">
         {activePlan ? (
-          <>
-            <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span
-                className={`text-5xl font-semibold tracking-tight ${dayScoreTone(activePlan.dayScore)}`}
-                style={{ fontVariantNumeric: "tabular-nums" }}
-              >
-                {activePlan.dayScore}
-              </span>
-              <span className="text-sm text-ink-muted">day score / 100</span>
-              {live && !run && (
-                <button onClick={planMyDay} className="btn-ghost px-3.5 py-1.5 text-xs">
-                  Re-plan
-                </button>
+          <div className="banner flex flex-1 flex-wrap items-center gap-x-10 gap-y-6 p-6 sm:p-8">
+            <ScoreRing
+              score={activePlan.dayScore}
+              color="#ffffff"
+              track="rgba(255, 255, 255, 0.28)"
+            />
+            <div className="min-w-0 flex-1 basis-72">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-medium uppercase tracking-[0.08em] text-white/70">
+                  Today's outdoor score
+                </span>
+                {live && !run && (
+                  <button onClick={planMyDay} className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0d55a5] transition-colors hover:bg-white/90">
+                    Re-plan
+                  </button>
+                )}
+              </div>
+              <p className="mt-3 max-w-3xl text-lg leading-relaxed text-white">
+                {activePlan.summary}
+              </p>
+              {activePlan.supersededNote && (
+                <p className="mt-2.5 text-sm text-white/60">{activePlan.supersededNote}</p>
               )}
             </div>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">
-              {activePlan.summary}
-            </p>
-            {activePlan.supersededNote && (
-              <p className="mt-2 text-xs text-ink-muted">{activePlan.supersededNote}</p>
-            )}
-          </>
+          </div>
         ) : (
           !needsSetup &&
           !run && (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="pane flex flex-wrap items-center gap-3 p-6">
               <button onClick={planMyDay} className="btn-primary px-5 py-2.5 text-sm">
                 Plan my day
               </button>
@@ -275,7 +243,7 @@ export default function TodayPage() {
         )}
 
         {run && (
-          <div className="mt-4 max-w-2xl rounded-2xl bg-surface p-4">
+          <div className="pane p-4">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="font-medium">Planning your day…</span>
               <span className="text-xs text-ink-muted" style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -290,7 +258,7 @@ export default function TodayPage() {
             </div>
             <p className="mt-2 text-xs text-ink-muted">
               The agent is scoring windows with the exposure engine. Leave it a
-              note — steering lands on the next run.
+              note. Steering lands on the next run.
             </p>
             <div className="mt-2 flex items-center gap-2">
               <input
@@ -306,16 +274,16 @@ export default function TodayPage() {
             </div>
           </div>
         )}
-      </header>
+        </div>
 
-      {needsSetup && (
-        <SetupCard hasNotes={Boolean(me?.profile.notes)} onActivated={() => {}} />
-      )}
+        <div className="flex flex-col gap-4 xl:col-span-5">
+        {needsSetup && <Onboarding />}
+        {!needsSetup && freshDemo && live && <Onboarding variant="demo" />}
 
-      {/* The agent, at a glance — always know what it's doing and what it
+      {/* The agent, at a glance. Always know what it's doing and what it
           needs from you. Decisions come before dashboards. */}
       {live && me && !needsSetup && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-hairline px-4 py-2.5 text-xs text-ink-2">
+        <div className="pane flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 text-sm text-ink-2">
           <span className="flex items-center gap-1.5 font-medium">
             <span
               aria-hidden
@@ -328,10 +296,10 @@ export default function TodayPage() {
             <span className="text-accent">Planning now…</span>
           ) : proposals.length > 0 ? (
             <span className="font-medium text-accent">
-              {proposals.length} decision{proposals.length > 1 ? "s" : ""} waiting on you ↓
+              {proposals.length} decision{proposals.length > 1 ? "s" : ""} waiting on you
             </span>
           ) : activePlan ? (
-            <span className="text-ink-muted">Nothing needs you — plan is set</span>
+            <span className="text-ink-muted">Nothing needs you. Plan is set</span>
           ) : (
             <span className="text-ink-muted">No plan yet today</span>
           )}
@@ -343,37 +311,43 @@ export default function TodayPage() {
 
       {proposals.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">
-            Waiting on you ({proposals.length})
-          </h2>
           {proposals.map((item) => (
             <PlanItemCard key={item.id} item={item} {...handlers} />
           ))}
         </section>
       )}
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <ConditionTile label={live ? "UV index · now" : "UV index · sample"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} />
-        <ConditionTile label="Feels like" value={String(now.apparentF)} unit="°F" band={heatBand(now.apparentF)} />
-        <ConditionTile label="Air quality (US AQI)" value={String(now.usAqi)} band={aqiBand(now.usAqi)} />
-        <ConditionTile
-          label="Pollen"
-          value={now.pollen ? now.pollen.index.toFixed(1) : "—"}
-          band={now.pollen ? pollenBand(now.pollen.index) : undefined}
-          noCoverage={now.pollen === null}
-        />
+        </div>
       </div>
 
-      <Card title="Your day against the sky" action={<BandLegend />}>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[15px] font-semibold tracking-tight">Right now</h2>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <ConditionTile label={live ? "UV index · now" : "UV index · sample"} value={String(now.uvIndex)} band={uvBand(now.uvIndex)} trend={hourly.map((h) => h.uvIndex)} kind="uv" />
+        <ConditionTile label="Feels like" value={String(now.apparentF)} unit="°F" band={heatBand(now.apparentF)} trend={hourly.map((h) => h.apparentF)} kind="heat" />
+        <ConditionTile label="Air quality (US AQI)" value={String(now.usAqi)} band={aqiBand(now.usAqi)} trend={hourly.map((h) => h.usAqi)} kind="air" />
+        <ConditionTile
+          label="Pollen"
+          value={now.pollen ? now.pollen.index.toFixed(1) : "–"}
+          band={now.pollen ? pollenBand(now.pollen.index) : undefined}
+          noCoverage={now.pollen === null}
+          trend={now.pollen ? hourly.map((h) => h.pollen?.index ?? 0) : undefined}
+          kind="pollen"
+        />
+        </div>
+      </section>
+
+      <Card title="When to be outside today" action={<BandLegend />}>
         <DayTimeline hours={hourly} activities={schedule} nowTime={nowTime} />
       </Card>
 
       {onPlanItems.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">Today&apos;s plan</h2>
-          {onPlanItems.map((item) => (
-            <PlanItemCard key={item.id} item={item} {...handlers} />
-          ))}
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-2">Today&apos;s plan</h2>
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            {onPlanItems.map((item) => (
+              <PlanItemCard key={item.id} item={item} {...handlers} />
+            ))}
+          </div>
         </section>
       )}
     </div>

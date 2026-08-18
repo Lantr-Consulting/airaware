@@ -54,9 +54,9 @@ function HomeEditor({
       setEditing(false);
       setChosen(null);
       setQuery("");
-      toast("success", `Home set to ${loc.name} — plans now use its sky.`);
+      toast("success", `Home set to ${loc.name}. Plans now use its sky.`);
     } catch {
-      toast("error", "Couldn't save your location — try again.");
+      toast("error", "Couldn't save your location. Try again.");
     } finally {
       setSaving(false);
     }
@@ -145,7 +145,7 @@ function HomeEditor({
           </button>
           {isUS && !zip && (
             <span className="w-full text-xs text-ink-muted">
-              No ZIP means pollen shows as “no coverage” — everything else still works.
+              No ZIP means pollen shows as “no coverage”. Everything else still works.
             </span>
           )}
         </div>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
   const signedOut = !loading && me === null;
   const live = me !== null;
 
-  // Adopt the account's values when /me (re)loads — state-during-render
+  // Adopt the account's values when /me (re)loads. State-during-render
   // pattern, so there's no cascading effect.
   const [adoptedMe, setAdoptedMe] = useState<typeof me>(null);
   if (me !== adoptedMe) {
@@ -198,14 +198,14 @@ export default function ProfilePage() {
       if (live) {
         await patchSettings({ profile: nextProfile, thresholds: result.thresholds });
         invalidateMe();
-        toast("success", "Profile interpreted and saved — the limits below are now enforced.");
+        toast("success", "Profile interpreted and saved. The limits below are now enforced.");
       } else {
-        setNotice("Interpreted (preview only — sign in to save it to your account).");
+        setNotice("Interpreted (preview only. Sign in to save it to your account).");
       }
       setProfile(nextProfile);
       setThresholds(result.thresholds);
     } catch {
-      toast("error", "The interpreter isn't reachable right now — nothing was changed.");
+      toast("error", "The interpreter isn't reachable right now. Nothing was changed.");
     } finally {
       setInterpreting(false);
     }
@@ -218,9 +218,9 @@ export default function ProfilePage() {
       await patchSettings({ activated: true });
       setActivated(true);
       invalidateMe();
-      toast("success", "Advisor activated — go plan your day.");
+      toast("success", "Advisor activated. Go plan your day.");
     } catch {
-      toast("error", "Couldn't activate — try again.");
+      toast("error", "Couldn't activate. Try again.");
     } finally {
       setActivating(false);
     }
@@ -266,7 +266,7 @@ export default function ProfilePage() {
               {live ? "Live" : "Sample"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-2">
+          <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-ink-2">
             You describe yourself in plain English; the advisor turns it into
             the limits below. Nothing changes without your say-so.
           </p>
@@ -305,9 +305,9 @@ export default function ProfilePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold tracking-tight">Review, then activate</h2>
-              <p className="mt-1 max-w-xl text-sm text-ink-2">
+              <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-ink-2">
                 Set your home below, describe yourself, and check the limits
-                table. When it looks like you, activate — nothing plans until
+                table. When it looks like you, activate. Nothing plans until
                 you do.
               </p>
             </div>
@@ -323,12 +323,12 @@ export default function ProfilePage() {
           value={about}
           onChange={(e) => setAbout(e.target.value)}
           rows={3}
-          placeholder="Allergies, skin, heat, kids, routines — plain English."
+          placeholder="Allergies, skin, heat, kids, routines. Plain English."
           className="w-full rounded-xl border border-hairline bg-page px-4 py-3 text-sm leading-relaxed text-ink-2 placeholder:text-ink-muted"
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-xs text-ink-muted">
-            {notice ?? "Describe yourself and press Interpret — the limits below update (and save, when signed in)."}
+            {notice ?? "Describe yourself and press Interpret. The limits below update (and save, when signed in)."}
           </p>
           <button onClick={interpret} disabled={interpreting} className="btn-primary px-4 py-1.5 text-sm">
             {interpreting ? "Interpreting…" : "Interpret"}
@@ -358,7 +358,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      <Card title="Your limits — what the engine enforces">
+      <Card title="Your limits. What the engine enforces">
         <ul className="flex flex-col divide-y divide-hairline">
           {thresholdRows.map((r) => (
             <li key={r.line} className="flex items-center justify-between gap-4 py-2.5 text-sm">
